@@ -100,7 +100,7 @@ def local_stiffn(elements=0,flip=False):
 # Flipped elements are indexed in this way instead:
 # 
 #          _____ 2
-#          |   /|p
+#          |   /|
 #          |  / |
 #          | /  |
 #        0 |/___|1
@@ -134,7 +134,7 @@ def stiffn(nodes_=0, elements_idx_=0):
     
     return stiffn_mat, rows, cols, data
     # return stiff_mat
-
+                                                           
 stiffn_mat, rows, cols, data = stiffn()
 stiffn_dense_mat = stiffn_mat.todense()
 
