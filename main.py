@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from scipy.sparse import coo_matrix
 
 # user input
 Nx = 2      # number of subdivisions in x
 Ny = 2      # number of subdivisions in y
 Lx = 1.0    # x length of mesh rectangle
 Ly = 1.0    # y length of mesh rectangle
+
+#===============================================================================
+# 1. MESH GENERATION STEP
+#===============================================================================
 
 # number of nodes (and number of basis functions)
 nx = Nx+1
@@ -17,7 +22,7 @@ n  = nx*ny
 NE = 2*Nx*Ny
 
 # number of non-vanishing "matrix elements" in the stiffness matrix
-n_stiff = 9*NE
+n_stiffn = 9*NE
 
 # represent the mesh using nodes and elements arrays
 xmesh = np.linspace(0,Lx,nx)
@@ -63,3 +68,96 @@ print(elements)
 print("\nelements_idx:")
 print(elements_idx)
 
+#===============================================================================
+# 2. STIFNESS MATRIX GENERATION STEP
+#===============================================================================
+
+def local_stiffn(elements=0,flip=False):
+    # to be implemented
+    ls_mat  = np.array([[4,3,5], 
+                        [1,0,2], 
+                        [7,6,8]])
+    lsf_mat = np.array([[ls_mat[1,1],ls_mat[1,0],ls_mat[1,2]], 
+                        [ls_mat[0,1],ls_mat[0,0],ls_mat[0,2]], 
+                        [ls_mat[2,1],ls_mat[2,0],ls_mat[2,2]]])
+    if flip:
+        return ls_mat
+        # return lsf_mat
+    else:
+        return lsf_mat
+        # return ls_mat
+
+# The indexing of the local stiffness matrix is similar to that seen earlier
+# when building the elements, except now i=0.  Non-flipped element is indexed
+# like so:
+# 
+#        0 _____ 1
+#          |   /|
+#          |  / |
+#          | /  |
+#        2 |/___|
+# 
+# Flipped elements are indexed in this way instead:
+# 
+#          _____ 2
+#          |   /|
+#          |  / |
+#          | /  |
+#        0 |/___|1
+#
+# Therefore we have for a flipped element that:
+#
+#    1 -> 0,  0 -> 1,  2 -> 2
+#
+#  [[ 00, 01, 02 ]          [[ 11, 10, 12 ]
+#   [ 10, 11, 12 ]    ->     [ 01, 00, 02 ]
+#   [ 20, 21, 22 ]]          [ 21, 20, 22 ]]
+    
+print("\n\nlocal stiffness matrix:")
+print(local_stiffn())
+print("\nflipped local stiffness matrix:")
+print(local_stiffn(flip=True))
+
+def stiffn(nodes_=0, elements_idx_=0):
+    # infer data from given mesh, to be done later
+    rows = np.repeat(elements_idx,3).flatten() # add extra flatten 'cos you never know
+    cols = np.tile(elements_idx,3).flatten()
+    
+    n_data_h = int(n_stiffn/2)
+    NE_h = int(NE/2)
+    data = np.zeros(n_stiffn)
+    data[0:n_data_h] = np.tile(local_stiffn().flatten(),NE_h)
+    data[n_data_h:n_stiffn] = np.tile(local_stiffn(flip=True).flatten(),NE_h)
+
+    stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
+    stiffn_mat.sum_duplicates() # yes, there are some
+    
+    return stiffn_mat, rows, cols, data
+    # return stiff_mat
+
+stiffn_mat, rows, cols, data = stiffn()
+
+print("\nrows:")
+print(rows)
+print("\ncols:")
+print(cols)
+print("\nflattened data:")
+print(data)
+print("\nstiffness matrix in sparse format:")
+print(stiffn_mat)
+print("\nstiffness matrix in dense format:")
+print(stiffn_mat.todense())
+
+#===============================================================================
+# 3. CONSTANTS VECTOR GENERATION STEP (BASIS PROJECTION)
+#===============================================================================
+
+
+#===============================================================================
+# 4. LINEAR SYSTEM SOLUTION
+#===============================================================================
+
+
+#===============================================================================
+# 5. EXAMPLE + PLOT OF THE RESULTS
+#===============================================================================
