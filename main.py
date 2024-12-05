@@ -73,10 +73,10 @@ print(elements_idx)
 #===============================================================================
 
 def local_stiffn(elements=0,flip=False):
-    # to be implemented
-    ls_mat  = np.array([[1,4,6], 
-                        [4,2,5], 
-                        [6,5,3]])
+    d_mat = np.array([[-dx,   0, dx],
+                      [ dy, -dy,  0]])
+                     
+    ls_mat  = d_mat.T@d_mat/(2.0*dx*dy)
     lsf_mat = np.array([[ls_mat[1,1],ls_mat[1,0],ls_mat[1,2]], 
                         [ls_mat[0,1],ls_mat[0,0],ls_mat[0,2]], 
                         [ls_mat[2,1],ls_mat[2,0],ls_mat[2,2]]])
@@ -118,7 +118,7 @@ print(local_stiffn())
 print("\nflipped local stiffness matrix:")
 print(local_stiffn(flip=True))
 
-def stiffn(nodes_=0, elements_idx_=0):
+def stiffn(nodes_=0, elements_idx_=0, large=1e05):
     # infer data from given mesh, to be done later
     rows = np.repeat(elements_idx,3).flatten() # add extra flatten 'cos you never know
     cols = np.tile(elements_idx,3).flatten()
@@ -131,6 +131,11 @@ def stiffn(nodes_=0, elements_idx_=0):
 
     stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
     stiffn_mat.sum_duplicates() # yes, there are some
+
+    # impose boundary condition
+    M = abs(stiffn_mat).max() * large
+    # ... (find the indices)
+    
     
     return stiffn_mat, rows, cols, data
     # return stiff_mat
@@ -152,6 +157,9 @@ if np.ma.allequal(stiffn_dense_mat,stiffn_dense_mat.T):
     print("stiffness matrix is symmetric, hooray!")
 else:
     print("stiffness matrix is not symmetric, alas!")
+# One could check that stiffn_dense_mat is positive definite, but it seems to me
+# it is since it is clearly diagonally dominant with a positive diagonal. And of
+# course it is worth checking that the determinant is different from zero.
     
 
 #===============================================================================
