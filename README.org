@@ -70,7 +70,7 @@ Finally we compute the local stiffness with:
 # \end{equation}
 
 #+BEGIN_EXAMPLE
-       D.T x D
+       D^T x D
 A = --------------
      4*elem_area
 #+END_EXAMPLE
