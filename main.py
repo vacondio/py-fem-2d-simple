@@ -74,9 +74,9 @@ print(elements_idx)
 
 def local_stiffn(elements=0,flip=False):
     # to be implemented
-    ls_mat  = np.array([[4,3,5], 
-                        [1,0,2], 
-                        [7,6,8]])
+    ls_mat  = np.array([[1,4,6], 
+                        [4,2,5], 
+                        [6,5,3]])
     lsf_mat = np.array([[ls_mat[1,1],ls_mat[1,0],ls_mat[1,2]], 
                         [ls_mat[0,1],ls_mat[0,0],ls_mat[0,2]], 
                         [ls_mat[2,1],ls_mat[2,0],ls_mat[2,2]]])
@@ -100,7 +100,7 @@ def local_stiffn(elements=0,flip=False):
 # Flipped elements are indexed in this way instead:
 # 
 #          _____ 2
-#          |   /|
+#          |   /|p
 #          |  / |
 #          | /  |
 #        0 |/___|1
@@ -136,6 +136,7 @@ def stiffn(nodes_=0, elements_idx_=0):
     # return stiff_mat
 
 stiffn_mat, rows, cols, data = stiffn()
+stiffn_dense_mat = stiffn_mat.todense()
 
 print("\nrows:")
 print(rows)
@@ -146,7 +147,12 @@ print(data)
 print("\nstiffness matrix in sparse format:")
 print(stiffn_mat)
 print("\nstiffness matrix in dense format:")
-print(stiffn_mat.todense())
+print(stiffn_dense_mat)
+if np.ma.allequal(stiffn_dense_mat,stiffn_dense_mat.T):
+    print("stiffness matrix is symmetric, hooray!")
+else:
+    print("stiffness matrix is not symmetric, alas!")
+    
 
 #===============================================================================
 # 3. CONSTANTS VECTOR GENERATION STEP (BASIS PROJECTION)
