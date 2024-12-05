@@ -1,11 +1,12 @@
-* What needs to be done
-** DONE Build meshes
-** TODO Stiffness matrix
-** TODO RHS of the linear system (constants vector)
-** TODO Algorithm to refine the mesh
-** TODO Write an example
+* py-fem-2d-simple
+** What needs to be done
+*** DONE Build meshes
+*** TODO Stiffness matrix
+*** TODO RHS of the linear system (constants vector)
+*** TODO Algorithm to refine the mesh
+*** TODO Write an example
 
-* Some notes to carry out the project
+** Some notes to help the project
 
 - [[https://en.wikipedia.org/wiki/Stiffness_matrix][Stiffness Matrix]]: here is the definition of the local stiffness matrix that we
   can borrow for a (relatively) quick implementation
@@ -30,7 +31,7 @@
 - [[https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions][List comprehensions]]: useful to generate those meshes, but ~numpy.linspace~ is
   even better.
 
-* Generating the local stiffness matrix
+** Generating the local stiffness matrix
 
 Let us name the coordinates of the vertices of the an element:
 
