@@ -35,35 +35,42 @@
 Let us name the coordinates of the vertices of the an element:
 
 #+BEGIN_EXAMPLE
-
-       (x0,y0) _____ (x1,y1)
-               |   /|
-               |  / |
-               | /  |
-       (x2,y2) |/___|
-
+.
+.       (x0,y0) _____ (x1,y1)
+.               |   /|
+.               |  / |
+.               | /  |
+.       (x2,y2) |/___|
+.
 #+END_EXAMPLE
 
 Now let us use the appropriate formula to compute the local stiffness:
 
-# #+BEGIN_EXAMPLE
-# D =  [ x2-x1, x0-x2, x1-x0 ] = [ -dx,   0, dx ]
-#      [ y2-y1, y0-y2, y1-y0 ]   [  dy, -dy,  0 ]
-# #+END_EXAMPLE
-\begin{equation}
-\mathbf D = 
-\begin{bmatrix}
-x_2-x_1 & x_0-x_2 & x_1-x_0 \\
-y_2-y_1 & y_0-y_2 & y_1-y_0
-\end{bmatrix} =
-\begin{bmatrix}
--\mathrm dx & 0           & \mathrm dx \\
- \mathrm dy & -\mathrm dy & 0
-\end{bmatrix}
-\end{equation}
+#+BEGIN_EXAMPLE
+D =  [ x2-x1, x0-x2, x1-x0 ] = [ -dx,   0, dx ]
+     [ y2-y1, y0-y2, y1-y0 ]   [  dy, -dy,  0 ]
+#+END_EXAMPLE
+# \begin{equation}
+# \mathbf D = 
+# \begin{bmatrix}
+# x_2-x_1 & x_0-x_2 & x_1-x_0 \\
+# y_2-y_1 & y_0-y_2 & y_1-y_0
+# \end{bmatrix} =
+# \begin{bmatrix}
+# -\mathrm dx & 0           & \mathrm dx \\
+#  \mathrm dy & -\mathrm dy & 0
+# \end{bmatrix}
+# \end{equation}
 
 Finally we compute the local stiffness with:
 
-\begin{equation}
-\mathbf A = \frac{\mathbf D^T \mathbf D}{4 ~ \mathrm{area}(T)}
-\end{equation}
+# \begin{equation}
+# \mathbf A = \frac{\mathbf D^T \mathbf D}{4 ~ \mathrm{area}(T)}
+# \end{equation}
+
+#+BEGIN_EXAMPLE
+       D.T x D
+A = --------------
+     4*elem_area
+#+END_EXAMPLE
+
