@@ -36,6 +36,24 @@ elements_idx = [(i,i+1,nx+i) for i in range(n-nx) if (i+1)%nx]
 elements_idx.extend([(i,i+1,i+1-nx) for i in range(nx,n-1) if (i+1)%nx])
 elements_idx = np.array(elements_idx)
 
+# First half of the elements is built like so:
+# 
+#        i _____ i+1
+#          |   /|
+#          |  / |
+#          | /  |
+#     nx+1 |/___|
+# 
+# Second half of the elements is made of flipped triangles:
+# 
+#          _____ i+1-nx
+#          |   /|
+#          |  / |
+#          | /  |
+#        i |/___|i+1
+#
+# We will refer to the latter element as a flipped element.
+
 # print results
 # np.set_printoptions(legacy='1.25')
 print("nodes:")
