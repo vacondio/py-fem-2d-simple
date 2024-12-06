@@ -228,14 +228,7 @@ print(stiffn_bnd_dense_mat)
 # Each of these volumes is to be multiplied by 6 to get the integral over the
 # whole hexagon.
 
-def g(p):
-    sigma_x = 0.01
-    sigma_y = 0.01
-    x0      = 0.5
-    y0      = 0.5
-    N       = 1.0
-    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) + (p[...,1]-y0)**2/(2.0*sigma_y)))
-
+# define function to compute constants vector
 def fv_int(f,nodes_):
     const_int = 6.0 / 3.0 * 0.5 * dx*dy
     fv_vec  = const_int * np.array(f(nodes_))
@@ -247,6 +240,15 @@ def fv_int(f,nodes_):
     fv_vec[nx-1: n:      nx] = 0.0
 
     return fv_vec
+
+# define a gaussian for an example
+def g(p):
+    sigma_x = 0.01
+    sigma_y = 0.01
+    x0      = 0.5
+    y0      = 0.5
+    N       = 1.0
+    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) + (p[...,1]-y0)**2/(2.0*sigma_y)))
     
 b_vec = np.array(fv_int(g,nodes))
 
@@ -254,6 +256,22 @@ print("\n\nf(x):")
 print(g(nodes))
 print("\n\nb_vec:")
 print(b_vec)
+
+#-------------------------------------------------------------------------------
+# Plot g(x,y), gaussian function
+#-------------------------------------------------------------------------------
+import matplotlib.pyplot as plt
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+
+X = nodes[:,0].reshape(nx,ny)
+Y = nodes[:,1].reshape(nx,ny)
+Z = g(nodes).reshape(nx,ny)
+
+ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
+# ax.plot_surface(X, Y, Z)
+plt.show()
 
 #===============================================================================
 # 4. LINEAR SYSTEM SOLUTION
