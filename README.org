@@ -1,10 +1,12 @@
 * py-fem-2d-simple
 ** What needs to be done
 *** DONE Build meshes
-*** TODO Stiffness matrix
-*** TODO RHS of the linear system (constants vector)
+*** DONE Stiffness matrix
+*** DONE RHS of the linear system (constants vector)
 *** TODO Algorithm to refine the mesh
-*** TODO Write an example
+*** TODO Check for bugs (rotational symmetry)
+*** TODO Tidy up code (wrap things in module and classes)
+*** TODO Write an example + notebook
 
 ** Some notes to help the project
 
