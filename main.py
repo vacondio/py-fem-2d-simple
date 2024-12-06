@@ -234,7 +234,7 @@ def g(p):
     x0      = 0.5
     y0      = 0.5
     N       = 1.0
-    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) + (p[...,1]-y0)**2/2.0*sigma_y))
+    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) + (p[...,1]-y0)**2/(2.0*sigma_y)))
 
 def fv_int(f,nodes_):
     const_int = 6.0 / 3.0 * 0.5 * dx*dy
