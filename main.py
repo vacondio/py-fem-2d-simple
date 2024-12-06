@@ -193,13 +193,31 @@ if np.ma.allequal(stiffn_dense_mat,stiffn_dense_mat.T):
 else:
     print("stiffness matrix is not symmetric, alas!")
 # One could check that stiffn_dense_mat is positive definite, but it seems to me
-# it is since it is clearly diagonally dominant with a positive diagonal. And of
-# course it is worth checking that the determinant is different from zero.
+# it is since it is clearly diagonally dominant with a positive diagonal.  And
+# of course it is worth checking that the determinant is different from zero.
     
 
 #===============================================================================
 # 3. CONSTANTS VECTOR GENERATION STEP (BASIS PROJECTION)
-#===============================================================================
+# ==============================================================================
+#
+# Each basis function is non-vanishing over a the surface of a hexagon made of 6
+# elements.  Therefore, we need to evaluate the integral of \int dx f(x)*v_i(x)
+# over each hexagon indexed by i.  To keep things simple, we will evaluate the f
+# over the mesh that we have already generated, and use the available values of
+# f to compute the integral.  This means that, for each hexagon we have, only
+# one value of the approximated integrand does not vanish, since v_i(x_j) = 0
+# for j/=i.  Therefore, f(x_i)*v_i(x_i) is the only non-vanishing value of the
+# integrand, and all the neighboring mesh nodes yield vanishing contributions.
+# With a linear approximation of f(x)v_i(x), we find that the integral over each
+# element of the hexagon is simply the volume of the tetrahedron having the
+# element as base and f(x_i)v_i(x_i) as height, that being
+#
+# 1/3 * 1/2 dx dh * f(x_i) v_i(x_i)
+#
+# Each of these volumes is to be multiplied by 6 to get the integral over the
+# whole hexagon.
+
 
 
 #===============================================================================
