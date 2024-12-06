@@ -156,8 +156,8 @@ def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_boundary_cs=True):
     if (apply_boundary_cs):
         # impose boundary conditions
         # M = abs(stiffn_mat).max() * large
-        top_idx        = np.arange(0   , nx)
-        bottom_idx     = np.arange(n-nx, n)
+        top_idx        = np.arange(0     , nx    )
+        bottom_idx     = np.arange(n-nx  , n     )
         left_idx       = np.arange(0     , n-nx+1, nx)
         right_idx      = np.arange(nx-1  , n     , nx)
         boundaries_idx = np.append(top_idx, [bottom_idx,left_idx,right_idx])
@@ -218,7 +218,32 @@ else:
 # Each of these volumes is to be multiplied by 6 to get the integral over the
 # whole hexagon.
 
+def g(p):
+    sigma_x = 0.1
+    sigma_y = 0.1
+    x0      = 0.5
+    y0      = 0.5
+    N       = 1.0
+    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) + (p[...,1]-y0)**2/2.0*sigma_y))
 
+def fv_int(f,nodes_):
+    const_int = 6.0 / 3.0 * 0.5 * dx*dy
+    fv_vec  = const_int * np.array(f(nodes_))
+
+    # set boundary conditions
+    fv_vec[0:    nx    ]     = 0.0
+    fv_vec[n-nx: n     ]     = 0.0
+    fv_vec[0:    n-nx+1: nx] = 0.0
+    fv_vec[nx-1: n:      nx] = 0.0
+
+    return fv_vec
+    
+b_vec = np.array(fv_int(g,nodes))
+
+print("\n\nf(x):")
+print(g(nodes))
+print("\n\nb_vec:")
+print(b_vec)
 
 #===============================================================================
 # 4. LINEAR SYSTEM SOLUTION
