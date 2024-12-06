@@ -30,11 +30,13 @@ ymesh = np.linspace(0,Ly,ny)
 dx=xmesh[1]-xmesh[0]
 dy=ymesh[1]-ymesh[0]
 
-nodes    = np.array([(ymesh[j], xmesh[i]) for j in range(ny) for i in range(nx)])
+nodes = np.array([(ymesh[j], xmesh[i]) for j in range(ny) for i in range(nx)])
+# contains n = nx*ny couples
 
 elements = [([nodes[i],nodes[i+1],nodes[nx+i]]) for i in range(n-nx) if (i+1)%nx]
 elements.extend([([nodes[i],nodes[i+1],nodes[i+1-nx]]) for i in range(nx,n-1) if (i+1)%nx])
 elements = np.array(elements)
+# contains NE = 2*Nx*Ny elements
 # N.B.: second half of the elements array contains the flipped elements
 
 elements_idx = [(i,i+1,nx+i) for i in range(n-nx) if (i+1)%nx]
@@ -91,19 +93,19 @@ def local_stiffn(elements=0,flip=False):
 # when building the elements, except now i=0.  Non-flipped element is indexed
 # like so:
 # 
-#        0 _____ 1
-#          |   /|
-#          |  / |
-#          | /  |
-#        2 |/___|
+#    (x0,y0) = 0 ______ 1 = (x1,y1)
+#                |   /| 
+#                |  /|| 
+#                | /||| 
+#    (x2,y2) = 2 |/|||| 
 # 
 # Flipped elements are indexed in this way instead:
 # 
-#          _____ 2
-#          |   /|
-#          |  / |
-#          | /  |
-#        0 |/___|1
+#                _____  2 = (x2,y2)
+#                ||||/|     
+#                |||/ |     
+#                ||/  |     
+#    (x0,y0) = 0 |/___| 1 = (x1,y1)
 #
 # Therefore we have for a flipped element that:
 #
@@ -112,6 +114,19 @@ def local_stiffn(elements=0,flip=False):
 #  [[ 00, 01, 02 ]          [[ 11, 10, 12 ]
 #   [ 10, 11, 12 ]    ->     [ 01, 00, 02 ]
 #   [ 20, 21, 22 ]]          [ 21, 20, 22 ]]
+#
+# Let us now write down the formula for the computation of the local stiffness,
+# assuming x0 = 0 and y0 = 0:
+#
+# D =  [ x2-x1, x0-x2, x1-x0 ] = [ -dx,   0, dx ]
+#      [ y2-y1, y0-y2, y1-y0 ]   [  dy, -dy,  0 ]
+#
+# Finally we compute the local stiffness with:
+#
+#        D^T x D
+# A = --------------
+#      4*elem_area
+#
     
 print("\n\nlocal stiffness matrix:")
 print(local_stiffn())
