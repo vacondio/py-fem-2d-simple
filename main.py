@@ -127,30 +127,50 @@ def local_stiffn(elements=0,flip=False):
 # A = --------------
 #      4*elem_area
 #
-    
+
 print("\n\nlocal stiffness matrix:")
 print(local_stiffn())
 print("\nflipped local stiffness matrix:")
 print(local_stiffn(flip=True))
 
-def stiffn(nodes_=0, elements_idx_=0, large=1e05):
+def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_boundary_cs=True):
     # infer data from given mesh, to be done later
-    rows = np.repeat(elements_idx,3).flatten() # add extra flatten 'cos you never know
-    cols = np.tile(elements_idx,3).flatten()
+    n_data   = n_stiffn
+    n_data_h = int(n_data/2)
+    NE_h     = int(NE/2)
+
+    # allocate extra space (4*nx) for boundary conditions
+    rows = np.zeros(n_data + 4*nx)
+    cols = np.zeros(n_data + 4*nx)
+    data = np.zeros(n_data + 4*nx)
     
-    n_data_h = int(n_stiffn/2)
-    NE_h = int(NE/2)
-    data = np.zeros(n_stiffn)
+    rows[:n_data] = np.repeat(elements_idx,3).flatten() # add extra flatten 'cos you never know
+    cols[:n_data] = np.tile(elements_idx,3).flatten()
+    
     data[0:n_data_h] = np.tile(local_stiffn().flatten(),NE_h)
-    data[n_data_h:n_stiffn] = np.tile(local_stiffn(flip=True).flatten(),NE_h)
+    data[n_data_h:n_data] = np.tile(local_stiffn(flip=True).flatten(),NE_h)
 
+    # stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
+    # stiffn_mat.sum_duplicates() # yes, there are some
+
+    if (apply_boundary_cs):
+        # impose boundary conditions
+        # M = abs(stiffn_mat).max() * large
+        top_idx        = np.arange(0   , nx)
+        bottom_idx     = np.arange(n-nx, n)
+        left_idx       = np.arange(0     , n-nx+1, nx)
+        right_idx      = np.arange(nx-1  , n     , nx)
+        boundaries_idx = np.append(top_idx, [bottom_idx,left_idx,right_idx])
+        
+        rows[n_data:] = boundaries_idx
+        cols[n_data:] = boundaries_idx
+        
+        M = abs(data).max() * large
+        data[n_data:] = M
+
+    # finally create sparse matrix
     stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
-    stiffn_mat.sum_duplicates() # yes, there are some
-
-    # impose boundary condition
-    M = abs(stiffn_mat).max() * large
-    # ... (find the indices)
-    
+    stiffn_mat.sum_duplicates() # yes, there are some    
     
     return stiffn_mat, rows, cols, data
     # return stiff_mat
