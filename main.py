@@ -30,7 +30,7 @@ ymesh = np.linspace(0,Ly,ny)
 dx=xmesh[1]-xmesh[0]
 dy=ymesh[1]-ymesh[0]
 
-nodes = np.array([(ymesh[j], xmesh[i]) for j in range(ny) for i in range(nx)])
+nodes = np.array([(xmesh[i], ymesh[j]) for j in range(ny) for i in range(nx)])
 # contains n = nx*ny couples
 
 elements = [([nodes[i],nodes[i+1],nodes[nx+i]]) for i in range(n-nx) if (i+1)%nx]
