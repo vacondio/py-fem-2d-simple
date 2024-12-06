@@ -4,8 +4,8 @@ import numpy as np
 from scipy.sparse import coo_matrix
 
 # user input
-Nx = 2      # number of subdivisions in x
-Ny = 2      # number of subdivisions in y
+Nx = 100    # number of subdivisions in x
+Ny = 100    # number of subdivisions in y
 Lx = 1.0    # x length of mesh rectangle
 Ly = 1.0    # y length of mesh rectangle
 
@@ -229,8 +229,8 @@ print(stiffn_bnd_dense_mat)
 # whole hexagon.
 
 def g(p):
-    sigma_x = 0.1
-    sigma_y = 0.1
+    sigma_x = 0.01
+    sigma_y = 0.01
     x0      = 0.5
     y0      = 0.5
     N       = 1.0
