@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.sparse import coo_matrix
+from scipy.linalg import solve_banded
 
 # user input
 Nx = 100    # number of subdivisions in x
@@ -250,13 +251,43 @@ def g(p):
     N       = 1.0
     return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) + (p[...,1]-y0)**2/(2.0*sigma_y)))
     
-b_vec = np.array(fv_int(g,nodes))
 
 #===============================================================================
 # 4. LINEAR SYSTEM SOLUTION
 #===============================================================================
 
+# let us solve the linear system in both ways and compare the timing
+from time import time
 
+A_mat     = stiffn(apply_dirichlet_cs=True, return_banded=False)[0]
+A_mat_bnd = stiffn(apply_dirichlet_cs=True, return_banded=True)[0]
+b_vec     = fv_int(g,nodes)
+
+A_mat     = A_mat.todense()
+A_mat_bnd = A_mat_bnd.todense()
+
+# print("\nA_mat:")
+# print(A_mat)
+# print("\nb_vec:")
+# print(b_vec)
+
+start = time(); x1 = np.linalg.solve(A_mat, b_vec); end = time();
+print("np.linalg.solve(A_mat, b_vec): %f" % (end - start))
+
+start = time(); x2 = solve_banded((nx,nx), A_mat_bnd, b_vec); end = time();
+print("scipy.linalg.solve_banded(A_mat, b_vec): %f" % (end - start))
+
+print("\nx1:")
+print(x1)
+print("\nx2:")
+print(x2)
+
+if np.allclose(x1, x2, 1e-64, 1e-16):
+    print("\nnp.linalg.solve(A_mat, b_vec) yielded the same result as\n"
+          " scipy.linalg.solve_banded(A_mat, b_vec), hooray!")
+else:
+    print("\nnp.linalg.solve(A_mat, b_vec) yielded the same result as\n"
+          " scipy.linalg.solve_banded(A_mat, b_vec), alas!")
 
 #===============================================================================
 # 5. EXAMPLE + PLOT OF THE RESULTS
@@ -267,23 +298,30 @@ b_vec = np.array(fv_int(g,nodes))
 #-------------------------------------------------------------------------------
 import matplotlib.pyplot as plt
 
-# --------------
-# First subplot
-# --------------
-fig = plt.figure()
-ax = fig.add_subplot(1, 2, 1, projection='3d')
-
+#-------------------------------------------
+# First subplot: g(x, y), gaussian function
+#-------------------------------------------
 X = nodes[:,0].reshape(nx,ny)
 Y = nodes[:,1].reshape(nx,ny)
+
+fig = plt.figure()
+ax = fig.add_subplot(1, 2, 1, projection='3d')
 Z = g(nodes).reshape(nx,ny)
 ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
 
-# --------------
-# Second subplot
-# --------------
+#---------------------------------------------------
+# Second subplot: x2, solution of the linear system
+#---------------------------------------------------
 ax = fig.add_subplot(1, 2, 2, projection='3d')
-
-Z = b_vec.reshape(nx,ny)
+Z = x2.reshape(nx,ny)
 ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
+
+# # ------------------------------------------------------
+# # Third subplot: x1, slow solution of the linear system 
+# # ------------------------------------------------------
+# ax = fig.add_subplot(1, 3, 3, projection='3d')
+
+# Z = x1.reshape(nx,ny)
+# ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
 
 plt.show()
