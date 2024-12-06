@@ -133,7 +133,7 @@ print(local_stiffn())
 print("\nflipped local stiffness matrix:")
 print(local_stiffn(flip=True))
 
-def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_boundary_cs=True):
+def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_dirichlet_cs=True, return_banded=False):
     # infer data from given mesh, to be done later
     n_data   = n_stiffn
     n_data_h = int(n_data/2)
@@ -153,7 +153,7 @@ def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_boundary_cs=True):
     # stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
     # stiffn_mat.sum_duplicates() # yes, there are some
 
-    if (apply_boundary_cs):
+    if (apply_dirichlet_cs):
         # impose boundary conditions
         # M = abs(stiffn_mat).max() * large
         top_idx        = np.arange(0     , nx    )
@@ -168,15 +168,22 @@ def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_boundary_cs=True):
         M = abs(data).max() * large
         data[n_data:] = M
 
-    # finally create sparse matrix
-    stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
+    if (return_banded):
+        rows = rows + nx - cols
+        stiffn_mat = coo_matrix((data,(rows,cols)), shape=(2*nx+1,n))
+    else:
+        stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
+        
     stiffn_mat.sum_duplicates() # yes, there are some    
     
     return stiffn_mat, rows, cols, data
     # return stiff_mat
                                                            
-stiffn_mat, rows, cols, data = stiffn()
+stiffn_mat, rows, cols, data = stiffn(apply_dirichlet_cs=False)
 stiffn_dense_mat = stiffn_mat.todense()
+
+stiffn_bnd_mat, rows, cols, data = stiffn(apply_dirichlet_cs=False,return_banded=True)
+stiffn_bnd_dense_mat = stiffn_bnd_mat.todense()
 
 print("\nrows:")
 print(rows)
@@ -192,6 +199,9 @@ if np.ma.allequal(stiffn_dense_mat,stiffn_dense_mat.T):
     print("stiffness matrix is symmetric, hooray!")
 else:
     print("stiffness matrix is not symmetric, alas!")
+
+print("\n\n stiffness matrix in banded format:")
+print(stiffn_bnd_dense_mat)
 # One could check that stiffn_dense_mat is positive definite, but it seems to me
 # it is since it is clearly diagonally dominant with a positive diagonal.  And
 # of course it is worth checking that the determinant is different from zero.
