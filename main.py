@@ -252,10 +252,10 @@ def g(p):
     
 b_vec = np.array(fv_int(g,nodes))
 
-
 #===============================================================================
 # 4. LINEAR SYSTEM SOLUTION
 #===============================================================================
+
 
 
 #===============================================================================
@@ -267,13 +267,23 @@ b_vec = np.array(fv_int(g,nodes))
 #-------------------------------------------------------------------------------
 import matplotlib.pyplot as plt
 
+# --------------
+# First subplot
+# --------------
 fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
+ax = fig.add_subplot(1, 2, 1, projection='3d')
 
 X = nodes[:,0].reshape(nx,ny)
 Y = nodes[:,1].reshape(nx,ny)
 Z = g(nodes).reshape(nx,ny)
-
 ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
-# ax.plot_surface(X, Y, Z)
+
+# --------------
+# Second subplot
+# --------------
+ax = fig.add_subplot(1, 2, 2, projection='3d')
+
+Z = b_vec.reshape(nx,ny)
+ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
+
 plt.show()
