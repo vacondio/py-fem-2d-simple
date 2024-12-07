@@ -14,35 +14,141 @@ Ly = 1.0    # y length of mesh rectangle
 # 1. MESH GENERATION STEP
 #===============================================================================
 
+class TriangularMesh2D:
+    """
+    A simple triangular 2D mesh class
+        Nx : number of subdivisions in x
+        Ny : number of subdivisions in y
+        Lx : x length of the mesh rectangle
+        Ly : y length of the mesh rectangle
+    """
+    def __init__(self, Nx, Ny, Lx, Ly):
+
+        # number of nodes (and number of basis functions)
+        nx = Nx+1
+        ny = Ny+1
+        n  = nx*ny
+        
+        # number of elements
+        NE = 2*Nx*Ny
+        
+        # number of non-vanishing "matrix elements" in the stiffness matrix
+        # (will be moved to stiffness matrix generation)
+        n_stiffn = 9*NE
+
+        # build x and y meshes
+        xmesh = np.linspace(0,Lx,nx)
+        ymesh = np.linspace(0,Ly,ny)
+        
+        dx = xmesh[1]-xmesh[0]
+        dy = ymesh[1]-ymesh[0]
+
+        # represent the mesh using nodes and elements arrays
+        nodes = np.array([(xmesh[i], ymesh[j])
+                          for j in range(ny) for i in range(nx)])
+
+        NE_h = int(NE/2)
+        elements_idx = np.zeros([NE,3])
+        elements_idx[:NE_h] = np.array([(i,i+1,nx+i)
+                                        for i in range(n-nx) if (i+1)%nx])
+        elements_idx[NE_h:] = np.array([(i,i+1,i+1-nx)
+                                        for i in range(nx,n-1) if (i+1)%nx])
+        # N.B.: second half of the elements array contains the flipped elements
+
+        # assign attributes to self
+        self._Nx = Nx
+        self._Ny = Ny
+        self._Lx = Lx
+        self._Ly = Ly
+        self._nx = nx
+        self._ny = ny
+        self._n  = n
+        self._NE = NE
+        self._n_stiffn = n_stiffn
+        self._xmesh = xmesh
+        self._ymesh = ymesh
+        self._dx = dx
+        self._dy = dy
+        self._nodes = nodes
+        self._elements_idx = elements_idx
+
+    # getters
+    @property
+    def Nx(self):
+        return self._Nx
+    @property
+    def Ny(self):
+        return self._Ny
+    @property
+    def Lx(self):
+        return self._Lx
+    @property
+    def Ly(self):
+        return self._Ly
+    @property
+    def nx(self):
+        return self._nx
+    @property
+    def ny(self):
+        return self._ny
+    @property
+    def n(self):
+        return self._n
+    @property
+    def NE(self):
+        return self._NE
+    @property
+    def n_stiffn(self):
+        return self._n_stiffn
+    @property
+    def xmesh(self):
+        return self._xmesh
+    @property
+    def ymesh(self):
+        return self._ymesh
+    @property
+    def dx(self):
+        return self._dx
+    @property
+    def dy(self):
+        return self._dy
+    @property
+    def nodes(self):
+        return self._nodes
+    @property
+    def elements_idx(self):
+        return self._elements_idx
+
+mesh = TriangularMesh2D(Nx, Ny, Lx, Ly)
+
 # number of nodes (and number of basis functions)
-nx = Nx+1
-ny = Ny+1
-n  = nx*ny
+nx = mesh.nx
+ny = mesh.ny
+n  = mesh.n
 
 # number of elements
-NE = 2*Nx*Ny
+NE = mesh.NE
 
 # number of non-vanishing "matrix elements" in the stiffness matrix
-n_stiffn = 9*NE
+n_stiffn = mesh.n_stiffn
 
 # represent the mesh using nodes and elements arrays
-xmesh = np.linspace(0,Lx,nx)
-ymesh = np.linspace(0,Ly,ny)
-dx=xmesh[1]-xmesh[0]
-dy=ymesh[1]-ymesh[0]
+xmesh = mesh.xmesh
+ymesh = mesh.ymesh
 
-nodes = np.array([(xmesh[i], ymesh[j]) for j in range(ny) for i in range(nx)])
+dx = mesh.dx
+dy = mesh.dy
+
+nodes = mesh.nodes
 # contains n = nx*ny couples
 
 elements = [([nodes[i],nodes[i+1],nodes[nx+i]]) for i in range(n-nx) if (i+1)%nx]
 elements.extend([([nodes[i],nodes[i+1],nodes[i+1-nx]]) for i in range(nx,n-1) if (i+1)%nx])
 elements = np.array(elements)
-# contains NE = 2*Nx*Ny elements
-# N.B.: second half of the elements array contains the flipped elements
+# # contains NE = 2*Nx*Ny elements
+# # N.B.: second half of the elements array contains the flipped elements
 
-elements_idx = [(i,i+1,nx+i) for i in range(n-nx) if (i+1)%nx]
-elements_idx.extend([(i,i+1,i+1-nx) for i in range(nx,n-1) if (i+1)%nx])
-elements_idx = np.array(elements_idx)
+elements_idx = mesh.elements_idx
 
 # First half of the elements is built like so:
 # 
