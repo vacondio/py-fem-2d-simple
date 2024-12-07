@@ -85,6 +85,9 @@ class TriangularMesh2D:
         self._nodes = nodes
         self._elements_idx = elements_idx
 
+    def densify():
+        pass
+
     # getters
     @property
     def Nx(self):
