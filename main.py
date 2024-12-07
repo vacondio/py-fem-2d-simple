@@ -16,11 +16,17 @@ Ly = 1.0    # y length of mesh rectangle
 
 class TriangularMesh2D:
     """
-    A simple triangular 2D mesh class
+    A simple triangular 2D mesh class.
+
+    Attributes:
         Nx : number of subdivisions in x
         Ny : number of subdivisions in y
         Lx : x length of the mesh rectangle
         Ly : y length of the mesh rectangle
+
+    Methods:
+        densify : densify mesh in a mathematically controlled way (helps
+                  convergence of FEM)
     """
     def __init__(self, Nx, Ny, Lx, Ly):
 
@@ -31,10 +37,6 @@ class TriangularMesh2D:
         
         # number of elements
         NE = 2*Nx*Ny
-        
-        # number of non-vanishing "matrix elements" in the stiffness matrix
-        # (will be moved to stiffness matrix generation)
-        n_stiffn = 9*NE
 
         # build x and y meshes
         xmesh = np.linspace(0,Lx,nx)
@@ -48,7 +50,7 @@ class TriangularMesh2D:
                           for j in range(ny) for i in range(nx)])
 
         NE_h = int(NE/2)
-        elements_idx = np.zeros([NE,3])
+        elements_idx = np.zeros([NE,3], dtype=int)
         elements_idx[:NE_h] = np.array([(i,i+1,nx+i)
                                         for i in range(n-nx) if (i+1)%nx])
         elements_idx[NE_h:] = np.array([(i,i+1,i+1-nx)
@@ -64,7 +66,6 @@ class TriangularMesh2D:
         self._ny = ny
         self._n  = n
         self._NE = NE
-        self._n_stiffn = n_stiffn
         self._xmesh = xmesh
         self._ymesh = ymesh
         self._dx = dx
@@ -98,9 +99,6 @@ class TriangularMesh2D:
     def NE(self):
         return self._NE
     @property
-    def n_stiffn(self):
-        return self._n_stiffn
-    @property
     def xmesh(self):
         return self._xmesh
     @property
@@ -128,9 +126,6 @@ n  = mesh.n
 
 # number of elements
 NE = mesh.NE
-
-# number of non-vanishing "matrix elements" in the stiffness matrix
-n_stiffn = mesh.n_stiffn
 
 # represent the mesh using nodes and elements arrays
 xmesh = mesh.xmesh
@@ -181,7 +176,9 @@ print(elements_idx)
 # 2. STIFNESS MATRIX GENERATION STEP
 #===============================================================================
 
-def local_stiffn(elements=0,flip=False):
+def local_stiffn(mesh,flip=False):
+    dx = mesh.dx
+    dy = mesh.dy
     d_mat = np.array([[-dx,   0, dx],
                       [ dy, -dy,  0]])
                      
@@ -236,38 +233,38 @@ def local_stiffn(elements=0,flip=False):
 #
 
 print("\n\nlocal stiffness matrix:")
-print(local_stiffn())
+print(local_stiffn(mesh))
 print("\nflipped local stiffness matrix:")
-print(local_stiffn(flip=True))
+print(local_stiffn(mesh, flip=True))
 
-def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_dirichlet_cs=True, return_banded=False):
-    # infer data from given mesh, to be done later
-    n_data   = n_stiffn
-    n_data_h = int(n_data/2)
-    NE_h     = int(NE/2)
+def stiffn(mesh, large=1e05, apply_dirichlet_cs=True, return_banded=True):
+    NE     = mesh.NE
+    n_data = 9*NE
+    n      = mesh.n
+    nx     = mesh.nx
 
     # allocate extra space (4*nx) for boundary conditions
-    rows = np.zeros(n_data + 4*nx)
-    cols = np.zeros(n_data + 4*nx)
-    data = np.zeros(n_data + 4*nx)
+    rows = np.zeros(n_data + 4*nx, dtype=int)
+    cols = np.zeros(n_data + 4*nx, dtype=int)
+    data = np.zeros(n_data + 4*nx, dtype=np.float64)
     
-    rows[:n_data] = np.repeat(elements_idx,3).flatten() # add extra flatten 'cos you never know
-    cols[:n_data] = np.tile(elements_idx,3).flatten()
-    
-    data[0:n_data_h] = np.tile(local_stiffn().flatten(),NE_h)
-    data[n_data_h:n_data] = np.tile(local_stiffn(flip=True).flatten(),NE_h)
+    rows[:n_data] = np.repeat(elements_idx,3)
+    cols[:n_data] =   np.tile(elements_idx,3).flatten()
 
-    # stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
-    # stiffn_mat.sum_duplicates() # yes, there are some
+    NE_h     = int(NE/2)
+    n_data_h = int(n_data/2)
+    ls_mat  = local_stiffn(mesh)
+    lsf_mat = local_stiffn(mesh, flip=True)
+    data[0:n_data_h]      = np.tile( ls_mat.flatten(), NE_h)
+    data[n_data_h:n_data] = np.tile(lsf_mat.flatten(), NE_h)
 
     if (apply_dirichlet_cs):
         # impose boundary conditions
-        # M = abs(stiffn_mat).max() * large
-        top_idx        = np.arange(0     , nx    )
-        bottom_idx     = np.arange(n-nx  , n     )
-        left_idx       = np.arange(0     , n-nx+1, nx)
-        right_idx      = np.arange(nx-1  , n     , nx)
-        boundaries_idx = np.append(top_idx, [bottom_idx,left_idx,right_idx])
+        top_idx        = np.arange(0     , nx        , dtype=int)
+        bottom_idx     = np.arange(n-nx  , n         , dtype=int)
+        left_idx       = np.arange(0     , n-nx+1, nx, dtype=int)
+        right_idx      = np.arange(nx-1  , n     , nx, dtype=int)
+        boundaries_idx = np.concatenate([top_idx,bottom_idx,left_idx,right_idx])
         
         rows[n_data:] = boundaries_idx
         cols[n_data:] = boundaries_idx
@@ -277,19 +274,21 @@ def stiffn(nodes_=0, elements_idx_=0, large=1e05, apply_dirichlet_cs=True, retur
 
     if (return_banded):
         rows = rows + nx - cols
+        # begin debug
+        print ("nx, n = %i, %i" % (nx, n))
+        # end debug
         stiffn_mat = coo_matrix((data,(rows,cols)), shape=(2*nx+1,n))
     else:
         stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
         
-    stiffn_mat.sum_duplicates() # yes, there are some    
-    
+    stiffn_mat.sum_duplicates()
     return stiffn_mat, rows, cols, data
     # return stiff_mat
                                                            
-stiffn_mat, rows, cols, data = stiffn(apply_dirichlet_cs=False)
+stiffn_mat, rows, cols, data = stiffn(mesh, apply_dirichlet_cs=False, return_banded=False)
 stiffn_dense_mat = stiffn_mat.todense()
 
-stiffn_bnd_mat, rows, cols, data = stiffn(apply_dirichlet_cs=False,return_banded=True)
+stiffn_bnd_mat, rows, cols, data = stiffn(mesh, apply_dirichlet_cs=False, return_banded=True)
 stiffn_bnd_dense_mat = stiffn_bnd_mat.todense()
 
 print("\nrows:")
@@ -336,15 +335,16 @@ print(stiffn_bnd_dense_mat)
 # whole hexagon.
 
 # define function to compute constants vector
-def fv_int(f,nodes_):
+def fv_int(mesh, f):
+    nodes = mesh.nodes
     const_int = 6.0 / 3.0 * 0.5 * dx*dy
-    fv_vec  = const_int * np.array(f(nodes_))
+    fv_vec  = const_int * np.array(f(nodes))
 
     # set boundary conditions
-    fv_vec[0:    nx    ]     = 0.0
-    fv_vec[n-nx: n     ]     = 0.0
-    fv_vec[0:    n-nx+1: nx] = 0.0
-    fv_vec[nx-1: n:      nx] = 0.0
+    fv_vec[0:   nx]         = 0.0
+    fv_vec[n-nx:n ]         = 0.0
+    fv_vec[0:   n-nx+1: nx] = 0.0
+    fv_vec[nx-1:n:      nx] = 0.0
 
     return fv_vec
 
@@ -355,7 +355,8 @@ def g(p):
     x0      = 0.5
     y0      = 0.5
     N       = 1.0
-    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) + (p[...,1]-y0)**2/(2.0*sigma_y)))
+    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) +
+                        (p[...,1]-y0)**2/(2.0*sigma_y)))
     
 
 #===============================================================================
@@ -365,9 +366,9 @@ def g(p):
 # let us solve the linear system in both ways and compare the timing
 from time import time
 
-A_mat     = stiffn(apply_dirichlet_cs=True, return_banded=False)[0]
-A_mat_bnd = stiffn(apply_dirichlet_cs=True, return_banded=True)[0]
-b_vec     = fv_int(g,nodes)
+A_mat     = stiffn(mesh, apply_dirichlet_cs=True, return_banded=False)[0]
+A_mat_bnd = stiffn(mesh, apply_dirichlet_cs=True, return_banded=True )[0]
+b_vec     = fv_int(mesh, g)
 
 A_mat     = A_mat.todense()
 A_mat_bnd = A_mat_bnd.todense()
