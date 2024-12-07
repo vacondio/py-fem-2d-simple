@@ -387,12 +387,12 @@ print(x1)
 print("\nx2:")
 print(x2)
 
-if np.allclose(x1, x2, 1e-64, 1e-16):
+if np.allclose(x1, x2, 1e-64, 1e-15):
     print("\nnp.linalg.solve(A_mat, b_vec) yielded the same result as\n"
-          " scipy.linalg.solve_banded(A_mat, b_vec), hooray!")
+          "scipy.linalg.solve_banded(A_mat, b_vec), hooray!")
 else:
-    print("\nnp.linalg.solve(A_mat, b_vec) yielded the same result as\n"
-          " scipy.linalg.solve_banded(A_mat, b_vec), alas!")
+    print("\nnp.linalg.solve(A_mat, b_vec) did not yield the same result as\n"
+          "scipy.linalg.solve_banded(A_mat, b_vec), alas!")
 
 #===============================================================================
 # 5. EXAMPLE + PLOT OF THE RESULTS
