@@ -187,11 +187,9 @@ def local_stiffn(mesh,flip=False):
                         [ls_mat[0,1],ls_mat[0,0],ls_mat[0,2]], 
                         [ls_mat[2,1],ls_mat[2,0],ls_mat[2,2]]])
     if flip:
-        return ls_mat
-        # return lsf_mat
-    else:
         return lsf_mat
-        # return ls_mat
+    else:
+        return ls_mat
 
 # The indexing of the local stiffness matrix is similar to that seen earlier
 # when building the elements, except now i=0.  Non-flipped element is indexed
