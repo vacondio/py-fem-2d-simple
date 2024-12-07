@@ -191,7 +191,7 @@ def local_stiffn(mesh,flip=False):
     #
 
 
-def stiffn(mesh, large=1e05, apply_dirichlet_cs=True, return_banded=True):
+def stiffn(mesh, large=1e05, apply_dirichlet_bc=True, return_banded=True):
     NE     = mesh.NE
     n_data = 9*NE
     n      = mesh.n
@@ -212,7 +212,7 @@ def stiffn(mesh, large=1e05, apply_dirichlet_cs=True, return_banded=True):
     data[0:n_data_h]      = np.tile( ls_mat.flatten(), NE_h)
     data[n_data_h:n_data] = np.tile(lsf_mat.flatten(), NE_h)
 
-    if (apply_dirichlet_cs):
+    if (apply_dirichlet_bc):
         # impose boundary conditions
         top_idx        = np.arange(0     , nx        , dtype=int)
         bottom_idx     = np.arange(n-nx  , n         , dtype=int)
@@ -312,8 +312,8 @@ if __name__ == "__main__":
          
     from time import time
     
-    A_mat     = stiffn(fem_mesh, apply_dirichlet_cs=True, return_banded=False)
-    A_mat_bnd = stiffn(fem_mesh, apply_dirichlet_cs=True, return_banded=True )
+    A_mat     = stiffn(fem_mesh, apply_dirichlet_bc=True, return_banded=False)
+    A_mat_bnd = stiffn(fem_mesh, apply_dirichlet_bc=True, return_banded=True )
     b_vec     = fv_int(fem_mesh, g)
 
     # these should be moved inside stiffn()
