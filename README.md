@@ -1,18 +1,19 @@
-fem-2d-simple
+fem2dsimple
 =============
 
-`fem2dsimple` is a simple solver for the 2D Poisson equation over a rectangular domain with Dirichlet boundary conditions.
+`fem2dsimple` is a simple Python solver for the 2D Poisson equation.  The solution is computed over a rectangular mesh with Dirichlet boundary conditions.
 
 Minimal theory
 --------------
 The Poisson equation with Dirichlet boundary conditions is given by
 
 ```math
-\begin{align}
+\begin{align*}
 \nabla^2 u(x,y) = f(x,y) \quad & \forall (x,y) \in \Omega := [0,L_x] \times [0,L_y], \\
 u(x,y) = 0               \quad & \forall (x,y) \in \partial\Omega,
-\end{align}
+\end{align*}
 ```
+
 
 where $f$ is the inhomogeneity and $u$ the unknown.  By means of partial integration and with the definition of a basis set $\{v_i\}$, the problem can be recast as a linear system,
 
@@ -20,9 +21,9 @@ $$
 \sum_j A_{ij} u_j = b_i
 $$
 
-with $A_{ij} = \int_\Omega \nabla v_i(x,y) \; \nabla v_j(x,y) \; \mathrm d\sigma$, known as the *stiffness matrix*; and $b_i = \int_\Omega f(x,y) v_i(x,y) \; \mathrm d\sigma$.
+with $A_{ij} = \int_\Omega \nabla v_i(x,y) \nabla v_j(x,y) \mathrm d\sigma$, known as the *stiffness matrix*; and $b_i = \int_\Omega f(x,y) v_i(x,y) \mathrm d\sigma$.
 
-`fem2dsimple` uses triangular elements to discretize the rectangular domain, and piece-wise linear polynomials as a basis-set.  Each basis function $v_i$ is defined in the neighborhood of the $i$-th node and is constrained to have compact support: namely, it equals 1 on the $i$-th node and vanishes on the neighbouring nodes.
+`fem2dsimple` uses triangular elements to discretize the rectangular domain, and piece-wise linear polynomials as a basis set.  Each basis function $v_i$ is defined in the neighborhood of the $i$-th node and is constrained to have compact support: namely, it equals 1 on the $i$-th node and vanishes on the neighbouring nodes.
 
 Minimal example
 ---------------
@@ -63,6 +64,7 @@ Ly = 1.0    # y length of mesh rectangle
 #     | /  |
 #  _ _|/___|_ _
 #     !    !
+#
 
 mesh = fem.TriangularMesh2D(Nx, Ny, Lx, Ly)
 mesh.nodes
@@ -132,42 +134,52 @@ from scipy.linalg import solve_banded
 u = solve_banded((nx,nx), A_mat, b_vec)
 ```
 
+The solution is now ready to plot:
+
 
 ```python
 import matplotlib.pyplot as plt
+%matplotlib inline
 
 # prepare (x,y) grid
 nx, ny, nodes = mesh.nx, mesh.ny, mesh.nodes
 X = nodes[:,0].reshape(nx,ny)
 Y = nodes[:,1].reshape(nx,ny)
 
-fig = plt.figure()
+fig = plt.figure(figsize=(6.4, 3.0))
+fig.suptitle("Poisson equation", y= 0.95, fontsize=14)
 
 # first subplot: f(x, y), inhomogeneity of the Poisson equation
 Z = f(nodes).reshape(nx,ny)
-ax = fig.add_subplot(1, 2, 1, projection='3d')
-ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
 
-# second subplot: x2, solution of the linear system
+ax = fig.add_axes((0.0, 0.13, 0.5, 0.8), projection='3d')
+ax.set_title("inhomogeneity", y=-0.15)
+ax.tick_params(labelsize=8, pad=-2)
+ax.set_xlabel('x', labelpad=-4)
+ax.set_ylabel('y', labelpad=-4)
+ax.text2D(0.90, 0.85, "f(x,y)", transform=ax.transAxes)
+ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5, linewidths=0.5)
+
+# second subplot: u, solution of the linear system
 Z = u.reshape(nx,ny)
-ax = fig.add_subplot(1, 2, 2, projection='3d')
-ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
+
+ax = fig.add_axes((0.48, 0.13, 0.5, 0.8), projection='3d')
+ax.set_title("solution", y=-0.15)
+ax.tick_params(labelsize=8, pad=-2)
+ax.tick_params('z', pad=4)
+ax.set_xlabel('x', labelpad=-4)
+ax.set_ylabel('y', labelpad=-4)
+ax.text2D(0.90, 0.85, "u(x,y)", transform=ax.transAxes)
+ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5, linewidths=0.5)
+
+# plt.savefig("poisson.png")
+plt.show()
 ```
 
 
-
-
-    <mpl_toolkits.mplot3d.art3d.Line3DCollection at 0x7f1e2aeb71d0>
-
-
-
-
     
-![png](output_12_1.png)
+![png](output_13_0.png)
     
 
 
-
-```python
-
-```
+In the long range, the solution of the Poisson equation with a gaussian inhomogeneity should resemble $\sim 1/r$, with $r=\sqrt{(x^2+y^2)}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.  
