@@ -7,10 +7,12 @@ Minimal theory
 --------------
 The Poisson equation with Dirichlet boundary conditions is given by
 
+```math
 \begin{align}
 \nabla^2 u(x,y) = f(x,y) \quad & \forall (x,y) \in \Omega := [0,L_x] \times [0,L_y], \\
 u(x,y) = 0               \quad & \forall (x,y) \in \partial\Omega,
 \end{align}
+```
 
 where $f$ is the inhomogeneity and $u$ the unknown.  By means of partial integration and with the definition of a basis set $\{v_i\}$, the problem can be recast as a linear system,
 
