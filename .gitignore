@@ -5,3 +5,5 @@ scratch.py
 annotations.*
 *.html
 *.bk
+.ipynb*
+__pycache__
