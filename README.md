@@ -1,7 +1,7 @@
 fem2dsimple
 =============
 
-`fem2dsimple` is a simple Python solver for the 2D Poisson equation.  The solution is computed over a rectangular mesh with Dirichlet boundary conditions.
+`fem2dsimple` is a simple Python solver for the 2D Poisson equation.  The solution is computed over a rectangular mesh, with Dirichlet boundary conditions.
 
 Minimal theory
 --------------
