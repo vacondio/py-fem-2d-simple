@@ -233,6 +233,7 @@ def stiffn(mesh, large=1e05, apply_dirichlet_bc=True, return_banded=True):
         stiffn_mat = coo_matrix((data,(rows,cols)), shape=(n,n))
         
     stiffn_mat.sum_duplicates()
+    stiffn_mat = stiffn_mat.todense()
     # return stiffn_mat, rows, cols, data
     return stiffn_mat
 
@@ -316,10 +317,6 @@ if __name__ == "__main__":
     A_mat_bnd = stiffn(fem_mesh, apply_dirichlet_bc=True, return_banded=True )
     b_vec     = fv_int(fem_mesh, g)
 
-    # these should be moved inside stiffn()
-    A_mat     = A_mat.todense()
-    A_mat_bnd = A_mat_bnd.todense()
-    
     start = time(); x1 = np.linalg.solve(A_mat, b_vec); end = time();
     print("\n          time to solution of np.linalg.solve : %f s" % (end - start))
 
@@ -368,7 +365,4 @@ if __name__ == "__main__":
     # Z = x1.reshape(nx,ny)
     # ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
     
-    plt.show()    
-
-
-    
+    plt.show()
