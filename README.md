@@ -181,4 +181,55 @@ plt.show()
     
 
 
-In the long range, the solution of the Poisson equation with a gaussian inhomogeneity should resemble $\sim 1/r$, with $r=\sqrt{x^2+y^2}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.  
+In the long range, the solution of the Poisson equation with a gaussian inhomogeneity should resemble $\sim 1/r$, with $r=\sqrt{x^2+y^2}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.
+
+Technical details
+-----------------
+
+Much of the challenge of solving the Poisson equation numerically is posed by the construction of the stiffness matrix.  `fem2dsimple` relies on `numpy` data structures and `scipy` functionalities to overcome said challenge.
+
+The `stiffn` method of the `TriangularMesh2D` class is in charge of constructing the stiffness matrix.  It does so by making use of the `scipy.sparse.coo_matrix` utility for the creation of sparse matrices, which returns a matrix in the COO format upon providing three arrays: one containing all the non-vanishing elements (called `data` in the code), and two specifying the row and column indices where each element is found (called `rows` and `columns` in the code).
+
+The `scipy.sparse.coo_matrix` function allows for the conversion to the usual `numpy.array` format, provided that a shape is specified.  This is done by `stiffn` to return the stiffness matrix in two possible fashions: in its full $n \times n$ shape, with $n$ being the number of mesh nodes; or by packing it in the diagonal ordered form mentioned earlier.  The latter option requires remapping the indices stored in the `rows` and `columns` arrays as specified in the `scipy.linalg.solve_banded` documentation.
+
+Working with the diagonal ordered form allows one to take full advantage of the banded nature of the stiffness matrix, which is ensured by the compact support of the basis functions, and their consequent limited overlap.  Following this route saves memory and computation time when solving the linear system:
+
+
+```python
+from time import time
+
+# generic method
+A_mat     = fem.stiffn(mesh, return_bnd=False)
+start = time(); u1 = np.linalg.solve(A_mat, b_vec); end = time();
+print("\n          time to solution of np.linalg.solve : %5.3f s" % (end - start))
+
+#smart method (take advantage of bandedness)
+A_mat_bnd = fem.stiffn(mesh, return_bnd=True )
+nx = mesh.nx
+start = time(); u2 = solve_banded((nx,nx), A_mat_bnd, b_vec); end = time();
+print(  "time to solution of scipy.linalg.solve_banded : %5.3f s" % (end - start))
+```
+
+    
+              time to solution of np.linalg.solve : 15.633 s
+    time to solution of scipy.linalg.solve_banded : 0.053 s
+
+
+Here we went two separate ways to solve the linear system by setting the `return_bnd` argument of `stiffn`; and then by choosing the appropriate solver: either the generic `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (generic method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the generic method took 15.633 seconds, while the smart one 0.053 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
+
+
+```python
+if np.allclose(u1, u2, 1e-64, 1e-15):
+    print("\nnp.linalg.solve(A_mat, b_vec) yielded the same result as\n"
+          "scipy.linalg.solve_banded(A_mat, b_vec), hooray!")
+else:
+    print("\nnp.linalg.solve(A_mat, b_vec) did not yield the same result as\n"
+          "scipy.linalg.solve_banded(A_mat, b_vec), alas!")
+```
+
+    
+    np.linalg.solve(A_mat, b_vec) yielded the same result as
+    scipy.linalg.solve_banded(A_mat, b_vec), hooray!
+
+
+Further details concerning data layout, indexing and theoretical remarks can be found by inspecting the `fem2d.py` file and comments therein.
