@@ -274,6 +274,11 @@ def stiffn(mesh, large=1e05, apply_dbc=True, return_bnd=True):
         M = abs(data).max() * large
         data[n_data:] = M
 
+        # remark: the Dirichlet boundary conditions could also be imposed by
+        # having the basis functions vanish at the border of the domain,
+        # i.e. v(x_i,y_i) = 0 for (x_i,y_i) belonging to the border.  That would
+        # come at the cost of having a non-uniform basis.
+
     if (return_bnd):
         rows = rows + nx - cols
         stiffn_mat = coo_matrix((data,(rows,cols)), shape=(2*nx+1,n))
