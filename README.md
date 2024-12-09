@@ -14,7 +14,6 @@ u(x,y) = 0               \quad & \forall (x,y) \in \partial\Omega,
 \end{align*}
 ```
 
-
 where $f$ is the inhomogeneity and $u$ the unknown.  By means of partial integration and with the definition of a basis set $\{v_i\}$, the problem can be recast as a linear system,
 
 $$
@@ -33,7 +32,7 @@ To solve the Poisson equation with `fem2dsimple`, you need to specify your probl
 ```python
 import numpy as np
 
-# define a 2D gaussian function, p = [(x0,y0), (x1,y1), ...]
+# define a 2D gaussian function, p = [(x0,y0), (x1,y0), ...]
 def f(p):
     sigma_x = 0.01
     sigma_y = 0.01
