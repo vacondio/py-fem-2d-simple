@@ -58,6 +58,7 @@ class TriangularMesh2D:
                                         for i in range(n-nx) if (i+1)%nx])
         elements[NE_h:] = np.array([(i,i+1,i+1-nx)
                                         for i in range(nx,n-1) if (i+1)%nx])
+        #
         # N.B.: second half of the elements array contains the "turned"
         # elements, according to the following layout: first half of the
         # elements array is built like so:
@@ -77,6 +78,7 @@ class TriangularMesh2D:
         #        i |/___|i+1
         #
         # We will refer to the latter element as a turned element.
+        #
         
         # assign attributes to self
         self._Nx = Nx
@@ -177,6 +179,7 @@ def local_stiffn(mesh,turn=False):
         return lst_mat
     else:
         return ls_mat
+    #
     # The indexing of the local stiffness matrix is similar to that seen earlier
     # when building the elements, except now i=0.  Non-turned element is indexed
     # like so:
@@ -299,7 +302,7 @@ def fv_int(mesh, f):
 
     """
     dx, dy, nodes = mesh.dx, mesh.dy, mesh.nodes
-    const_int = 6.0 / 3.0 * 0.5 * mesh.dx*mesh.dy
+    const_int = 6.0 / 3.0 * 0.5*dx*dy
     fv_vec  = const_int * np.array(f(nodes))
 
     # set boundary conditions
@@ -310,27 +313,43 @@ def fv_int(mesh, f):
     fv_vec[nx-1:n:      nx] = 0.0
 
     return fv_vec
-    # Each basis function is non-vanishing over a the surface of a hexagon made
-    # of 6 elements.  Therefore, we need to evaluate the integral of \int dx
-    # f(x)*v_i(x) over each hexagon indexed by i.  To keep things simple, we
-    # will evaluate the f over the mesh that we have already generated, and use
-    # the available values of f to compute the integral.  This means that, for
-    # each hexagon we have, only one value of the approximated integrand does
-    # not vanish, since v_i(x_j) = 0 for j/=i.  Therefore, f(x_i)*v_i(x_i) is
-    # the only non-vanishing value of the integrand, and all the neighboring
-    # mesh nodes yield vanishing contributions.  With a linear approximation of
-    # f(x)v_i(x), we find that the integral over each element of the hexagon is
-    # simply the volume of the tetrahedron having the element as base and
-    # f(x_i)v_i(x_i) as height, that being
     #
-    # 1/3 * 1/2 dx dh * f(x_i) v_i(x_i)
+    # Each basis function is non-vanishing over the surface of a hexagon made of
+    # 6 elements.  Therefore, we need to evaluate the integral of \int dx
+    # f(x)*v_i(x) over each hexagon indexed by i.
+    #
+    # To keep things simple, we will evaluate the f over the mesh that we have
+    # already generated, and use the available values of f to compute the
+    # integral.  This means that, for each hexagon we have, only one value of
+    # the approximated integrand does not vanish, since v_i(x_j) = 0 for j/=i.
+    # Therefore, f(x_i)*v_i(x_i) is the only non-vanishing value of the 
+    # integrand, and all the neighboring mesh nodes yield vanishing
+    # contributions.  With a linear approximation of f(x)v_i(x), we find that
+    # the integral over each element of the hexagon is simply the volume of the
+    # tetrahedron having the element as base and f(x_i)v_i(x_i) as height, that
+    # being
+    #
+    # V_tetrahedron = 1/3 * 1/2 dx dh * f(x_i) v_i(x_i)
+    #                       ---------   ---------------
+    #                         base          height
     #
     # Each of these volumes is to be multiplied by 6 to get the integral over
     # the whole hexagon.
-    
+    #
+    # ISSUE: in my opinion there's a problem with the normalization of the basis
+    # set, which is not enforced.  If the dimensions Lx and Ly of the mesh are
+    # varied, the value of v_i(x_i) should change accordingly.  This of course
+    # also will have a consequence on bringing the solution u back to "real
+    # space", which requires computing u(x_i) = u_i*v_i(x_i) (trivial indeed, if
+    # v_i(x_i)=1).  I will sort this out eventually.
+    #    
 
 if __name__ == "__main__":
     import sys  # in case we want to use command line arguments
+
+    print("================================================================\n"+
+          "Welcome to fem2dsimple! Here's a showcase of its capabilities...\n"+
+          "================================================================\n")
     
     # user input
     Nx = 100    # number of subdivisions in x
@@ -339,10 +358,12 @@ if __name__ == "__main__":
     Ly = 1.0    # y length of mesh rectangle
 
     # instantiate mesh
-    fem_mesh = TriangularMesh2D(Nx, Ny, Lx, Ly)
+    mesh = TriangularMesh2D(Nx, Ny, Lx, Ly)
+    print("Instantiated a mesh with Nx, Ny, Lx, Ly = %i, %i, %i, %i \n"
+          % (Nx, Ny, Lx, Ly))
 
     # define a 2D gaussian function, p = [(x0,y0), (x1,y1), ...]
-    def g(p):
+    def f(p):
         sigma_x = 0.01
         sigma_y = 0.01
         x0      = 0.5
@@ -350,74 +371,88 @@ if __name__ == "__main__":
         N       = 1.0
         return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) +
                             (p[...,1]-y0)**2/(2.0*sigma_y)))
-
+    print("Defined a gaussian function:\n"                       +
+          "    f(x,y) = N * np.exp(-((x-x0)**2/(2.0*sigma_x) +\n"+
+          "                          (y-y0)**2/(2.0*sigma_y)))\n"+
+          "with:\n"                                              +
+          "    sigma_x, sigma_y = %8.5f, %8.5f\n" % (0.01, 0.01) +
+          "    x0, y0           = %8.5f, %8.5f\n" % (0.5 , 0.5 ) +
+          "    N                = %8.5f\n"        % 1.0)
     
-    #===========================================================================
-    # 4. LINEAR SYSTEM SOLUTION
-    #===========================================================================
-    #
+    # -----------------------------
+    # Solution of the linear system
+    # -----------------------------
     # We can solve the linear system in two ways:
     #
     # - by using the general numpy solver -- numpy.linalg.solve -- with the full
-    #   n*n coefficients matrix A_mat foo foo foo foo;
+    #   n*n coefficients matrix A_mat;
     #
     # - by using the scipy solver specific to banded matrices --
     #   scipy.linalg.solve_banded -- with the A_mat_bnd matrix in banded format.
     #
-    # Let us compare the two methods, and time them too!
-         
+    # Let us compare the two methods, and time them too!         
     from time import time
     
-    A_mat     = stiffn(fem_mesh, apply_dbc=True, return_bnd=False)
-    A_mat_bnd = stiffn(fem_mesh, apply_dbc=True, return_bnd=True )
-    b_vec     = fv_int(fem_mesh, g)
+    A_mat     = stiffn(mesh, apply_dbc=True, return_bnd=False)
+    A_mat_bnd = stiffn(mesh, apply_dbc=True, return_bnd=True )
+    b_vec     = fv_int(mesh, f)
 
-    start = time(); x1 = np.linalg.solve(A_mat, b_vec); end = time();
-    print("\n          time to solution of np.linalg.solve : %f s" % (end - start))
+    print("Solving the Poisson equation with f as inhomogeneity...")
 
-    nx = fem_mesh.nx
-    start = time(); x2 = solve_banded((nx,nx), A_mat_bnd, b_vec); end = time();
-    print(  "time to solution of scipy.linalg.solve_banded : %f s" % (end - start))
+    start = time(); u1 = np.linalg.solve(A_mat, b_vec); end = time();
+    print("\n          time to solution of np.linalg.solve : %5.3f s" % (end - start))
+
+    nx = mesh.nx
+    start = time(); u2 = solve_banded((nx,nx), A_mat_bnd, b_vec); end = time();
+    print(  "time to solution of scipy.linalg.solve_banded : %5.3f s" % (end - start))
     
-    print("\nx1:")
-    print(x1)
-    print("\nx2:")
-    print(x2)
+    print("\nu1:")
+    print(u1)
+    print("\nu2:")
+    print(u2)
     
-    if np.allclose(x1, x2, 1e-64, 1e-15):
+    if np.allclose(u1, u2, 1e-64, 1e-15):
         print("\nnp.linalg.solve(A_mat, b_vec) yielded the same result as\n"
               "scipy.linalg.solve_banded(A_mat, b_vec), hooray!")
     else:
         print("\nnp.linalg.solve(A_mat, b_vec) did not yield the same result as\n"
               "scipy.linalg.solve_banded(A_mat, b_vec), alas!")
-    
-    #===========================================================================
-    # 5. PLOT THE RESULTS
-    #===========================================================================
-    
-    import matplotlib.pyplot as plt
 
+    # --------------------
+    # Plotting the results
+    # --------------------
+    import matplotlib.pyplot as plt
+    
     # prepare (x,y) grid
-    nx, ny, nodes = fem_mesh.nx, fem_mesh.ny, fem_mesh.nodes
+    nx, ny, nodes = mesh.nx, mesh.ny, mesh.nodes
     X = nodes[:,0].reshape(nx,ny)
     Y = nodes[:,1].reshape(nx,ny)
     
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6.4, 3.0))
+    fig.suptitle("Poisson equation", y= 0.95, fontsize=14)
     
-    # first subplot: g(x, y), gaussian function, inhomogeneity of the Poisson
-    # equation
-    Z = g(nodes).reshape(nx,ny)
-    ax = fig.add_subplot(1, 2, 1, projection='3d')
-    ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
+    # first subplot: f(x, y), inhomogeneity of the Poisson equation
+    Z = f(nodes).reshape(nx,ny)
     
-    # second subplot: x2, solution of the linear system
-    Z = x2.reshape(nx,ny)
-    ax = fig.add_subplot(1, 2, 2, projection='3d')
-    ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
+    ax = fig.add_axes((0.0, 0.13, 0.5, 0.8), projection='3d')
+    ax.set_title("inhomogeneity", y=-0.15)
+    ax.tick_params(labelsize=8, pad=-2)
+    ax.set_xlabel('x', labelpad=-4)
+    ax.set_ylabel('y', labelpad=-4)
+    ax.text2D(0.90, 0.85, "f(x,y)", transform=ax.transAxes)
+    ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5, linewidths=0.5)
     
-    # # third subplot: x1, slow solution of the linear system 
-    # ax = fig.add_subplot(1, 3, 3, projection='3d')
-    # Z = x1.reshape(nx,ny)
-    # ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5)
+    # second subplot: u, solution of the linear system
+    Z = u1.reshape(nx,ny)
     
+    ax = fig.add_axes((0.48, 0.13, 0.5, 0.8), projection='3d')
+    ax.set_title("solution", y=-0.15)
+    ax.tick_params(labelsize=8, pad=-2)
+    ax.tick_params('z', pad=4)
+    ax.set_xlabel('x', labelpad=-4)
+    ax.set_ylabel('y', labelpad=-4)
+    ax.text2D(0.90, 0.85, "u(x,y)", transform=ax.transAxes)
+    ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5, linewidths=0.5)
+    
+    # plt.savefig("poisson.png")
     plt.show()
