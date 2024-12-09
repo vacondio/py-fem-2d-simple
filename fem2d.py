@@ -4,26 +4,35 @@ import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.linalg import solve_banded
 
-#===============================================================================
-# 1. MESH GENERATION STEP
-#===============================================================================
 
 class TriangularMesh2D:
-    """
-    A simple triangular 2D mesh class.
+    """A simple class for instantiating 2D rectangular mesh objects, divided in
+    triangular elements.
+
+    Init arguments:
+        Nx : number of subdivisions in x (int)
+        Ny : number of subdivisions in y (int)
+        Lx : x length of the mesh rectangle (int)
+        Ly : y length of the mesh rectangle (int)
 
     Attributes:
-        Nx : number of subdivisions in x
-        Ny : number of subdivisions in y
-        Lx : x length of the mesh rectangle
-        Ly : y length of the mesh rectangle
-
+        Nx, Ny, Lx, Ly : as above
+        nx, ny, n      : number of nodes (in a row, in a column, total) (int)
+        NE             : number of elements (int)
+        dx, dy         : x and y steps (int)
+        nodes          : n*2 matrix containing the 2 coordinates of each node,
+                         in a row-major order (float)
+        elements       : NE*3 matrix referencing each element; each element is
+                         referenced by means of the 3 nodes that define it; each
+                         node is referenced using its index in the nodes array
+                         (int)
+                         
     Methods:
-        densify : densify mesh in a mathematically controlled way (helps
+        densify : densify mesh in a mathematically controlled way (ensures
                   convergence of FEM)
+
     """
     def __init__(self, Nx, Ny, Lx, Ly):
-
         # number of nodes (and number of basis functions)
         nx = Nx+1
         ny = Ny+1
@@ -44,30 +53,30 @@ class TriangularMesh2D:
                           for j in range(ny) for i in range(nx)])
 
         NE_h = int(NE/2)
-        elements_idx = np.zeros([NE,3], dtype=int)
-        elements_idx[:NE_h] = np.array([(i,i+1,nx+i)
+        elements = np.zeros([NE,3], dtype=int)
+        elements[:NE_h] = np.array([(i,i+1,nx+i)
                                         for i in range(n-nx) if (i+1)%nx])
-        elements_idx[NE_h:] = np.array([(i,i+1,i+1-nx)
+        elements[NE_h:] = np.array([(i,i+1,i+1-nx)
                                         for i in range(nx,n-1) if (i+1)%nx])
-        # N.B.: second half of the elements array contains the flipped elements,
-        # according to the following layout: first half of the elements is built
-        # like so:
+        # N.B.: second half of the elements array contains the "turned"
+        # elements, according to the following layout: first half of the
+        # elements array is built like so:
         # 
         #        i _____ i+1
         #          |   /|
-        #          |  / |
-        #          | /  |
-        #     nx+1 |/___|
+        #          |  /||
+        #          | /|||
+        #     nx+1 |/||||
         # 
-        # Second half of the elements is made of flipped triangles:
+        # Second half of the elements array is made of turned triangles:
         # 
         #          _____ i+1-nx
-        #          |   /|
-        #          |  / |
-        #          | /  |
+        #          ||||/|
+        #          |||/ |
+        #          ||/  |
         #        i |/___|i+1
         #
-        # We will refer to the latter element as a flipped element.
+        # We will refer to the latter element as a turned element.
         
         # assign attributes to self
         self._Nx = Nx
@@ -78,14 +87,22 @@ class TriangularMesh2D:
         self._ny = ny
         self._n  = n
         self._NE = NE
-        self._xmesh = xmesh
-        self._ymesh = ymesh
+        # self._xmesh = xmesh
+        # self._ymesh = ymesh
         self._dx = dx
         self._dy = dy
         self._nodes = nodes
-        self._elements_idx = elements_idx
+        self._elements = elements
 
-    def densify():
+    def densify(n=1):
+        """Densify mesh in a mathematically controlled way (ensures convergence
+        of FEM).
+
+        Arguments:
+            n : number of densify operations to perform repeatedly (int, default
+                is 1)
+
+        """
         pass
 
     # getters
@@ -113,12 +130,12 @@ class TriangularMesh2D:
     @property
     def NE(self):
         return self._NE
-    @property
-    def xmesh(self):
-        return self._xmesh
-    @property
-    def ymesh(self):
-        return self._ymesh
+    # @property
+    # def xmesh(self):
+    #     return self._xmesh
+    # @property
+    # def ymesh(self):
+    #     return self._ymesh
     @property
     def dx(self):
         return self._dx
@@ -129,30 +146,39 @@ class TriangularMesh2D:
     def nodes(self):
         return self._nodes
     @property
-    def elements_idx(self):
-        return self._elements_idx
+    def elements(self):
+        return self._elements
 
 
-#===============================================================================
-# 2. STIFNESS MATRIX GENERATION STEP
-#===============================================================================
+def local_stiffn(mesh,turn=False):
+    """Returns the 3*3 local stiffness matrix from a given TriangularMesh2D
+    object.
 
-def local_stiffn(mesh,flip=False):
+    Arguments:
+        mesh : the TriangularMesh2D object of which the local stiffness is to be
+               computed (TriangularMesh2D)
+        turn : set it to False if the local stiffness is that of an element in
+               the first half of the TriangularMesh2D.elements array; set it to
+               True otherwise (default is False) (bool)
+
+    Returns: a 3*3 numpy.array object (float)
+
+    """
     dx = mesh.dx
     dy = mesh.dy
     d_mat = np.array([[-dx,   0, dx],
                       [ dy, -dy,  0]])
                      
     ls_mat  = d_mat.T@d_mat/(2.0*dx*dy)
-    lsf_mat = np.array([[ls_mat[1,1],ls_mat[1,0],ls_mat[1,2]], 
-                        [ls_mat[0,1],ls_mat[0,0],ls_mat[0,2]], 
-                        [ls_mat[2,1],ls_mat[2,0],ls_mat[2,2]]])
-    if flip:
-        return lsf_mat
+    lst_mat = np.array([[ls_mat[1,1], ls_mat[1,0], ls_mat[1,2]], 
+                        [ls_mat[0,1], ls_mat[0,0], ls_mat[0,2]], 
+                        [ls_mat[2,1], ls_mat[2,0], ls_mat[2,2]]])
+    if turn:
+        return lst_mat
     else:
         return ls_mat
     # The indexing of the local stiffness matrix is similar to that seen earlier
-    # when building the elements, except now i=0.  Non-flipped element is indexed
+    # when building the elements, except now i=0.  Non-turned element is indexed
     # like so:
     # 
     #    (x0,y0) = 0 ______ 1 = (x1,y1)
@@ -161,7 +187,7 @@ def local_stiffn(mesh,flip=False):
     #                | /||| 
     #    (x2,y2) = 2 |/|||| 
     # 
-    # Flipped elements are indexed in this way instead:
+    # Turned elements are indexed in this way instead:
     # 
     #                _____  2 = (x2,y2)
     #                ||||/|     
@@ -169,7 +195,7 @@ def local_stiffn(mesh,flip=False):
     #                ||/  |     
     #    (x0,y0) = 0 |/___| 1 = (x1,y1)
     #
-    # Therefore we have for a flipped element that:
+    # Therefore we have for a turned element that:
     #
     #    1 -> 0,  0 -> 1,  2 -> 2
     #
@@ -191,7 +217,26 @@ def local_stiffn(mesh,flip=False):
     #
 
 
-def stiffn(mesh, large=1e05, apply_dirichlet_bc=True, return_banded=True):
+def stiffn(mesh, large=1e05, apply_dbc=True, return_bnd=True):
+    """Returns the stiffness matrix from a given TriangularMesh2D object.
+
+    Arguments:
+        mesh       : the TriangularMesh2D object of which the local stiffness is
+                     to be computed (TriangularMesh2D)
+        large      : a large float used to ensure Dirichlet boundary conditions
+                     (float, default is 1e05)
+        apply_dbc  : set it to True if you wish to apply Dirichlet boundary
+                     conditions (bool, default is True)
+        return_bnd : set it to True if you want the matrix to be returned in
+                     diagonal ordered form, as accepted from the
+                     scipy.linalg.solve_banded solver; set it to False otherwise
+                     (bool)
+
+    Returns:
+        if return_bnd : a (2*nx+1)*n matrix (float)
+        else             : a n*n matrix (float)
+
+    """
     NE     = mesh.NE
     n_data = 9*NE
     n      = mesh.n
@@ -202,18 +247,18 @@ def stiffn(mesh, large=1e05, apply_dirichlet_bc=True, return_banded=True):
     cols = np.zeros(n_data + 4*nx, dtype=int)
     data = np.zeros(n_data + 4*nx, dtype=np.float64)
     
-    rows[:n_data] = np.repeat(mesh.elements_idx,3)
-    cols[:n_data] =   np.tile(mesh.elements_idx,3).flatten()
+    rows[:n_data] = np.repeat(mesh.elements,3)
+    cols[:n_data] =   np.tile(mesh.elements,3).flatten()
 
     NE_h     = int(NE/2)
     n_data_h = int(n_data/2)
     ls_mat  = local_stiffn(mesh)
-    lsf_mat = local_stiffn(mesh, flip=True)
+    lst_mat = local_stiffn(mesh, turn=True)
     data[0:n_data_h]      = np.tile( ls_mat.flatten(), NE_h)
-    data[n_data_h:n_data] = np.tile(lsf_mat.flatten(), NE_h)
+    data[n_data_h:n_data] = np.tile(lst_mat.flatten(), NE_h)
 
-    if (apply_dirichlet_bc):
-        # impose boundary conditions
+    if (apply_dbc):
+        # impose Dirichlet boundary conditions
         top_idx        = np.arange(0     , nx        , dtype=int)
         bottom_idx     = np.arange(n-nx  , n         , dtype=int)
         left_idx       = np.arange(0     , n-nx+1, nx, dtype=int)
@@ -226,7 +271,7 @@ def stiffn(mesh, large=1e05, apply_dirichlet_bc=True, return_banded=True):
         M = abs(data).max() * large
         data[n_data:] = M
 
-    if (return_banded):
+    if (return_bnd):
         rows = rows + nx - cols
         stiffn_mat = coo_matrix((data,(rows,cols)), shape=(2*nx+1,n))
     else:
@@ -238,11 +283,21 @@ def stiffn(mesh, large=1e05, apply_dirichlet_bc=True, return_banded=True):
     return stiffn_mat
 
 
-#===============================================================================
-# 3. CONSTANTS VECTOR GENERATION STEP (PROJECTION ONTO BASIS)
-# ==============================================================================
-
 def fv_int(mesh, f):
+    """Returns the constants vector of the Poisson linear system from a given
+    mesh and inhomogeneity f.
+
+    Arguments:
+        mesh : the TriangularMesh2D object used to represent the problem
+               (TriangularMesh2D)
+        f    : a function of the x and y coordinates; it has to be defined so as
+               to accept a coordinates array of shape P*Q*...*2, with
+               P,Q,... being any integer (function)
+
+    Returns:
+        a vector of n elements (float)
+
+    """
     dx, dy, nodes = mesh.dx, mesh.dy, mesh.nodes
     const_int = 6.0 / 3.0 * 0.5 * mesh.dx*mesh.dy
     fv_vec  = const_int * np.array(f(nodes))
@@ -313,8 +368,8 @@ if __name__ == "__main__":
          
     from time import time
     
-    A_mat     = stiffn(fem_mesh, apply_dirichlet_bc=True, return_banded=False)
-    A_mat_bnd = stiffn(fem_mesh, apply_dirichlet_bc=True, return_banded=True )
+    A_mat     = stiffn(fem_mesh, apply_dbc=True, return_bnd=False)
+    A_mat_bnd = stiffn(fem_mesh, apply_dbc=True, return_bnd=True )
     b_vec     = fv_int(fem_mesh, g)
 
     start = time(); x1 = np.linalg.solve(A_mat, b_vec); end = time();
