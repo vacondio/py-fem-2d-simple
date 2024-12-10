@@ -105,6 +105,7 @@ class TriangularMesh2D:
                 is 1)
 
         """
+        if (reps<1): return
         Nx = 2**reps * self.Nx
         Ny = 2**reps * self.Ny
         self.__init__(Nx, Ny, self.Lx, self.Ly)
