@@ -133,7 +133,7 @@ from scipy.linalg import solve_banded
 u = solve_banded((nx,nx), A_mat, b_vec)
 ```
 
-The solution is now ready to plot:
+And finally the solution can be plotted:
 
 
 ```python
@@ -157,7 +157,7 @@ ax.tick_params(labelsize=8, pad=-2)
 ax.set_xlabel('x', labelpad=-4)
 ax.set_ylabel('y', labelpad=-4)
 ax.text2D(0.90, 0.85, "f(x,y)", transform=ax.transAxes)
-ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5, linewidths=0.5)
+ax.plot_wireframe(X, Y, Z, linewidths=0.5)
 
 # second subplot: u, solution of the linear system
 Z = u.reshape(nx,ny)
@@ -169,7 +169,7 @@ ax.tick_params('z', pad=4)
 ax.set_xlabel('x', labelpad=-4)
 ax.set_ylabel('y', labelpad=-4)
 ax.text2D(0.90, 0.85, "u(x,y)", transform=ax.transAxes)
-ax.plot_wireframe(X, Y, Z, cstride=5, rstride=5, linewidths=0.5)
+ax.plot_wireframe(X, Y, Z, linewidths=0.5)
 
 # plt.savefig("poisson.png")
 plt.show()
@@ -211,25 +211,24 @@ print(  "time to solution of scipy.linalg.solve_banded : %5.3f s" % (end - start
 ```
 
     
-              time to solution of np.linalg.solve : 15.530 s
-    time to solution of scipy.linalg.solve_banded : 0.051 s
+              time to solution of np.linalg.solve : 16.314 s
+    time to solution of scipy.linalg.solve_banded : 0.054 s
 
 
-Here we went two separate ways to solve the linear system: first we set the `return_bnd` argument of `stiffn`, and then we chose the appropriate solver: either the general `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (general method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the general method took 15.530 seconds, while the smart one 0.051 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
+Here we went two separate ways to solve the linear system: first we set the `return_bnd` argument of `stiffn`, and then we chose the appropriate solver: either the general `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (general method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the general method took 16.314 seconds, while the smart one 0.054 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
 
 
 ```python
 if np.allclose(u1, u2, 1e-64, 1e-15):
-    print("\nnp.linalg.solve(A_mat, b_vec) yielded the same result as\n"
+    print("np.linalg.solve(A_mat, b_vec) yielded the same result as\n"
           "scipy.linalg.solve_banded(A_mat, b_vec), hooray!")
 else:
-    print("\nnp.linalg.solve(A_mat, b_vec) did not yield the same result as\n"
+    print("np.linalg.solve(A_mat, b_vec) did not yield the same result as\n"
           "scipy.linalg.solve_banded(A_mat, b_vec), alas!")
 ```
 
-    
     np.linalg.solve(A_mat, b_vec) yielded the same result as
     scipy.linalg.solve_banded(A_mat, b_vec), hooray!
 
 
-Further details concerning data layout, indexing and theoretical remarks can be found by inspecting the `fem2d.py` file and comments therein.
+Further details concerning data layout, indexing and theoretical remarks can be found by inspecting the `fem2d.py` file and comments therein.  The `notebook` directory contains some examples showcasing the usage of the module.
