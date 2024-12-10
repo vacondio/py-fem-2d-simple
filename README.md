@@ -1,7 +1,7 @@
 fem2dsimple
 =============
 
-`fem2dsimple` is a simple Python solver for the 2D Poisson equation.  The solution is computed over a rectangular mesh, with Dirichlet boundary conditions.
+`fem2dsimple` is a simple Python solver for the 2D Poisson equation using the finite element method (FEM).  The solution is computed over a rectangular mesh, with Dirichlet boundary conditions.
 
 Minimal theory
 --------------
@@ -186,11 +186,11 @@ In the long range, the solution of the Poisson equation with a gaussian inhomoge
 Technical details
 -----------------
 
-Much of the challenge of solving the Poisson equation numerically is posed by the construction of the stiffness matrix.  `fem2dsimple` relies on `numpy` data structures and `scipy` functionalities to overcome said challenge.
+Much of the challenge of implementing the FEM numerically is posed by the construction of the stiffness matrix.  `fem2dsimple` relies on `numpy` data structures and `scipy` functionalities to overcome said challenge.
 
-The `stiffn` method of the `TriangularMesh2D` class is in charge of constructing the stiffness matrix.  It does so by making use of the `scipy.sparse.coo_matrix` utility for the creation of sparse matrices, which returns a matrix in the COO format upon providing three arrays: one containing all the non-vanishing elements (called `data` in the code), and two specifying the row and column indices where each element is found (called `rows` and `columns` in the code).
+The `stiffn` method of the `TriangularMesh2D` class is in charge of constructing the stiffness matrix.  It does so by making use of the `scipy.sparse.coo_matrix` utility for the creation of sparse matrices, which returns a matrix in the COO format upon providing three arrays: one containing all the non-vanishing elements (called `data` in the code), and two specifying the row and column indices where each element recored in `data` must be located in the final matrix (called `rows` and `columns` in the code).
 
-The `scipy.sparse.coo_matrix` function allows for the conversion to the usual `numpy.array` format, provided that a shape is specified.  This is done by `stiffn` to return the stiffness matrix in two possible fashions: in its full $n \times n$ shape, with $n$ being the number of mesh nodes; or by packing it in the diagonal ordered form mentioned earlier.  The latter option requires remapping the indices stored in the `rows` and `columns` arrays as specified in the `scipy.linalg.solve_banded` documentation.
+The `scipy.sparse.coo_matrix` function allows for the conversion to the usual `numpy.array` format, provided that a shape is specified.  It is utilized by `stiffn` to return the stiffness matrix in two possible fashions: in its full $n \times n$ shape, with $n$ being the number of mesh nodes; or by packing it in the diagonal ordered form mentioned earlier.  The latter option requires remapping the indices stored in the `rows` and `columns` arrays as specified in the `scipy.linalg.solve_banded` documentation.
 
 Working with the diagonal ordered form allows one to take full advantage of the banded nature of the stiffness matrix, which is ensured by the compact support of the basis functions, and their consequent limited overlap.  Following this route saves memory and computation time when solving the linear system:
 
@@ -198,8 +198,8 @@ Working with the diagonal ordered form allows one to take full advantage of the 
 ```python
 from time import time
 
-# generic method
-A_mat     = fem.stiffn(mesh, return_bnd=False)
+# general method
+A_mat = fem.stiffn(mesh, return_bnd=False)
 start = time(); u1 = np.linalg.solve(A_mat, b_vec); end = time();
 print("\n          time to solution of np.linalg.solve : %5.3f s" % (end - start))
 
@@ -211,11 +211,11 @@ print(  "time to solution of scipy.linalg.solve_banded : %5.3f s" % (end - start
 ```
 
     
-              time to solution of np.linalg.solve : 15.633 s
-    time to solution of scipy.linalg.solve_banded : 0.053 s
+              time to solution of np.linalg.solve : 15.530 s
+    time to solution of scipy.linalg.solve_banded : 0.051 s
 
 
-Here we went two separate ways to solve the linear system by setting the `return_bnd` argument of `stiffn`; and then by choosing the appropriate solver: either the generic `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (generic method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the generic method took 15.633 seconds, while the smart one 0.053 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
+Here we went two separate ways to solve the linear system: first we set the `return_bnd` argument of `stiffn`, and then we chose the appropriate solver: either the general `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (general method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the general method took 15.530 seconds, while the smart one 0.051 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
 
 
 ```python
