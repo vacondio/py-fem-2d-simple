@@ -95,8 +95,8 @@ class TriangularMesh2D:
         self._dy = dy
         self._nodes = nodes
         self._elements = elements
-
-    def densify(n=1):
+        
+    def densify(self, reps=1):
         """Densify mesh in a mathematically controlled way (ensures convergence
         of FEM).
 
@@ -105,7 +105,9 @@ class TriangularMesh2D:
                 is 1)
 
         """
-        pass
+        Nx = 2**reps * self.Nx
+        Ny = 2**reps * self.Ny
+        self.__init__(Nx, Ny, self.Lx, self.Ly)
 
     # getters
     @property
