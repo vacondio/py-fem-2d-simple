@@ -247,11 +247,12 @@ def stiffn(mesh, large=1e05, apply_dbc=True, return_bnd=True):
     n_data = 9*NE
     n      = mesh.n
     nx     = mesh.nx
+    ny     = mesh.ny
 
     # allocate extra space (4*nx) for boundary conditions
-    rows = np.zeros(n_data + 4*nx, dtype=int)
-    cols = np.zeros(n_data + 4*nx, dtype=int)
-    data = np.zeros(n_data + 4*nx, dtype=np.float64)
+    rows = np.zeros(n_data + 2*nx + 2*ny, dtype=int)
+    cols = np.zeros(n_data + 2*nx + 2*ny, dtype=int)
+    data = np.zeros(n_data + 2*nx + 2*ny, dtype=np.float64)
     
     rows[:n_data] = np.repeat(mesh.elements,3)
     cols[:n_data] =   np.tile(mesh.elements,3).flatten()
