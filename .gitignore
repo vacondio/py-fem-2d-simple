@@ -1,10 +1,10 @@
-*~
 *#*
-*.x
-scratch.py
-annotations.*
-*.html
 *.bk
-.ipynb*
-__pycache__
 *.ggb
+*.html
+*.x
+*~
+.ipynb_*
+__pycache__
+annotations.*
+scratch.py
