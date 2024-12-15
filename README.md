@@ -142,14 +142,14 @@ import matplotlib.pyplot as plt
 
 # prepare (x,y) grid
 nx, ny, nodes = mesh.nx, mesh.ny, mesh.nodes
-X = nodes[:,0].reshape(nx,ny)
-Y = nodes[:,1].reshape(nx,ny)
+X = nodes[:,0].reshape(ny,nx)
+Y = nodes[:,1].reshape(ny,nx)
 
 fig = plt.figure(figsize=(6.4, 3.0))
 fig.suptitle("Poisson equation", y= 0.95, fontsize=14)
 
 # first subplot: f(x, y), inhomogeneity of the Poisson equation
-Z = f(nodes).reshape(nx,ny)
+Z = f(nodes).reshape(ny,nx)
 
 ax = fig.add_axes((0.0, 0.13, 0.5, 0.8), projection='3d')
 ax.set_title("inhomogeneity", y=-0.15)
@@ -160,7 +160,7 @@ ax.text2D(0.90, 0.85, "f(x,y)", transform=ax.transAxes)
 ax.plot_wireframe(X, Y, Z, linewidths=0.5)
 
 # second subplot: u, solution of the linear system
-Z = u.reshape(nx,ny)
+Z = u.reshape(ny,nx)
 
 ax = fig.add_axes((0.48, 0.13, 0.5, 0.8), projection='3d')
 ax.set_title("solution", y=-0.15)
