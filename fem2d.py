@@ -297,7 +297,7 @@ def stiffn(mesh, large=1e05, apply_dbc=True, return_bnd=True):
 
 def fv_int(mesh, f):
     """Returns the constants vector of the Poisson linear system from a given
-    mesh and inhomogeneity f.
+    mesh and source term f.
 
     Arguments:
         mesh : the TriangularMesh2D object used to represent the problem
@@ -406,7 +406,7 @@ if __name__ == "__main__":
     A_mat_bnd = stiffn(mesh, apply_dbc=True, return_bnd=True )
     b_vec     = fv_int(mesh, f)
 
-    print("Solving the Poisson equation with f as inhomogeneity...")
+    print("Solving the Poisson equation with f as source term...")
 
     start = time(); u1 = np.linalg.solve(A_mat, b_vec); end = time();
     print("\n          time to solution of np.linalg.solve : %5.3f s" % (end - start))
@@ -440,11 +440,11 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(6.4, 3.0))
     fig.suptitle("Poisson equation", y= 0.95, fontsize=14)
     
-    # first subplot: f(x, y), inhomogeneity of the Poisson equation
+    # first subplot: f(x, y), source term of the Poisson equation
     Z = f(nodes).reshape(ny,nx)
     
     ax = fig.add_axes((0.0, 0.13, 0.5, 0.8), projection='3d')
-    ax.set_title("inhomogeneity", y=-0.15)
+    ax.set_title("source term", y=-0.15)
     ax.tick_params(labelsize=8, pad=-2)
     ax.set_xlabel('x', labelpad=-4)
     ax.set_ylabel('y', labelpad=-4)

@@ -14,7 +14,7 @@ u(x,y) = 0               \quad & \forall (x,y) \in \partial\Omega,
 \end{align*}
 ```
 
-where $f$ is the inhomogeneity and $u$ the unknown.  By means of partial integration and with the definition of a basis set $\{v_i\}$, the problem can be recast as a linear system,
+where $f$ is the source term and $u$ the unknown.  By means of partial integration and with the definition of a basis set $\{v_i\}$, the problem can be recast as a linear system,
 
 $$
 \sum_j A_{ij} u_j = b_i
@@ -26,7 +26,7 @@ with $A_{ij} = \int_\Omega \nabla v_i(x,y) \nabla v_j(x,y) \mathrm d\sigma$, kno
 
 Minimal example
 ---------------
-To solve the Poisson equation with `fem2dsimple`, you need to specify your problem first: namely, you need to define the inhomogeneity $f(x,y)$.  Begin by defining your function of interest:
+To solve the Poisson equation with `fem2dsimple`, you need to specify your problem first: namely, you need to define the source term $f(x,y)$.  Begin by defining your function of interest:
 
 
 ```python
@@ -146,13 +146,13 @@ X = nodes[:,0].reshape(ny,nx)
 Y = nodes[:,1].reshape(ny,nx)
 
 fig = plt.figure(figsize=(6.4, 3.0))
-fig.suptitle("Poisson equation", y= 0.95, fontsize=14)
+fig.suptitle("Poisson equation", y= 0.97, fontsize=14)
 
-# first subplot: f(x, y), inhomogeneity of the Poisson equation
+# first subplot: f(x, y), source term of the Poisson equation
 Z = f(nodes).reshape(ny,nx)
 
 ax = fig.add_axes((0.0, 0.13, 0.5, 0.8), projection='3d')
-ax.set_title("inhomogeneity", y=-0.15)
+ax.set_title("source term", y=-0.15)
 ax.tick_params(labelsize=8, pad=-2)
 ax.set_xlabel('x', labelpad=-4)
 ax.set_ylabel('y', labelpad=-4)
@@ -181,7 +181,7 @@ plt.show()
     
 
 
-In the long range, the solution of the Poisson equation with a gaussian inhomogeneity should resemble $\sim 1/r$, with $r=\sqrt{x^2+y^2}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.
+In the long range, the solution of the Poisson equation with a gaussian source term should resemble $\sim 1/r$, with $r=\sqrt{x^2+y^2}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.
 
 Technical details
 -----------------
@@ -211,11 +211,11 @@ print(  "time to solution of scipy.linalg.solve_banded : %5.3f s" % (end - start
 ```
 
     
-              time to solution of np.linalg.solve : 16.314 s
-    time to solution of scipy.linalg.solve_banded : 0.054 s
+              time to solution of np.linalg.solve : 16.731 s
+    time to solution of scipy.linalg.solve_banded : 0.048 s
 
 
-Here we went two separate ways to solve the linear system: first we set the `return_bnd` argument of `stiffn`, and then we chose the appropriate solver: either the general `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (general method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the general method took 16.314 seconds, while the smart one 0.054 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
+Here we went two separate ways to solve the linear system: first we set the `return_bnd` argument of `stiffn`, and then we chose the appropriate solver: either the general `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (general method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the general method took 16.731 seconds, while the smart one 0.048 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
 
 
 ```python
