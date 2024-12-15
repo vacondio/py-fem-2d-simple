@@ -7,3 +7,4 @@ annotations.*
 *.bk
 .ipynb*
 __pycache__
+*.ggb
