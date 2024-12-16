@@ -34,13 +34,13 @@ import numpy as np
 
 # define a 2D gaussian function, p = [(x0,y0), (x1,y0), ...]
 def f(p):
-    sigma_x = 0.01
-    sigma_y = 0.01
+    sigma_x = 0.1
+    sigma_y = 0.1
     x0      = 0.5
     y0      = 0.5
     N       = 1.0
-    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x) +
-                        (p[...,1]-y0)**2/(2.0*sigma_y)))
+    return N * np.exp(-((p[...,0]-x0)**2/(2.0*sigma_x**2) +
+                        (p[...,1]-y0)**2/(2.0*sigma_y**2)))
 ```
 
 To solve the problem defined by this function, import the `fem2d` module and create a mesh:
@@ -181,7 +181,7 @@ plt.show()
     
 
 
-In the long range, the solution of the Poisson equation with a gaussian source term should resemble $\sim 1/r$, with $r=\sqrt{x^2+y^2}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.
+From electrostatics, we know that in the long range the solution of the Poisson equation with a localized source term should resemble $\sim 1/r$, with $r=\sqrt{x^2+y^2}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.  However, larger grids or different boundary conditions should be used to accurately recover the $1/r$ trend (see the `notebook/gaussians.ipynb` notebook to this end).  The `notebook/examples.ipynb` notebook collects some more well-behaved examples to check the validity of the implementation of `fem2dsimple`.
 
 Technical details
 -----------------
@@ -211,11 +211,11 @@ print(  "time to solution of scipy.linalg.solve_banded : %5.3f s" % (end - start
 ```
 
     
-              time to solution of np.linalg.solve : 16.731 s
-    time to solution of scipy.linalg.solve_banded : 0.048 s
+              time to solution of np.linalg.solve : 16.528 s
+    time to solution of scipy.linalg.solve_banded : 0.050 s
 
 
-Here we went two separate ways to solve the linear system: first we set the `return_bnd` argument of `stiffn`, and then we chose the appropriate solver: either the general `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (general method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the general method took 16.731 seconds, while the smart one 0.048 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
+Here we went two separate ways to solve the linear system: first we set the `return_bnd` argument of `stiffn`, and then we chose the appropriate solver: either the general `numpy.linalg.solve` solver when working with the full $n \times n$ matrix (general method), or `scipy.linalg.solve_banded` when working with the matrix in diagonal ordered form (smart method).  On my old desktop computer (Intel i3-4130) the general method took 16.528 seconds, while the smart one 0.050 seconds: it's a difference spanning three orders of magnitude!  And, of course, the two solutions must coincide:
 
 
 ```python
