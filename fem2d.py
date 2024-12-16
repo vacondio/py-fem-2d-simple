@@ -345,13 +345,6 @@ def fv_int(mesh, f):
     # Each of these volumes is to be multiplied by 6 to get the integral over
     # the whole hexagon.
     #
-    # ISSUE: in my opinion there's a problem with the normalization of the basis
-    # set, which is not enforced.  If the dimensions Lx and Ly of the mesh are
-    # varied, the value of v_i(x_i) should change accordingly.  This of course
-    # also will have a consequence on bringing the solution u back to "real
-    # space", which requires computing u(x_i) = u_i*v_i(x_i) (trivial indeed, if
-    # v_i(x_i)=1).  I will sort this out eventually.
-    #    
 
 if __name__ == "__main__":
     import sys  # in case we want to use command line arguments
