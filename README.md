@@ -181,7 +181,7 @@ plt.show()
     
 
 
-From electrostatics, we know that in the long range the solution of the Poisson equation with a localized source term should resemble $\sim 1/r$, with $r=\sqrt{x^2+y^2}$: this goes to zero more slowly than a gaussian function (the latter decaying exponentially).  Here you can tell that $u(r)$ does indeed go to zero more slowly than $f(r)$.  However, larger grids or different boundary conditions should be used to accurately recover the $1/r$ trend (see the `notebook/gaussians.ipynb` notebook to this end).  The `notebook/examples.ipynb` notebook collects some more well-behaved examples to check the validity of the implementation of `fem2dsimple`.
+The `notebook/examples.ipynb` notebook collects some more examples to check the validity of the implementation of `fem2dsimple`.
 
 Technical details
 -----------------

@@ -7,4 +7,5 @@
 .ipynb_*
 __pycache__
 annotations.*
+gaussians.ipynb
 scratch.py
